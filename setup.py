@@ -3,7 +3,7 @@ from setuptools import setup
 setup(name='xcesm',
       version='0.01',
       description='xarray plugin for CESM output diagnosis.',
-      url='https://github.com/Yefee/gcmaverager',
+      url='https://github.com/Yefee/xcesm',
       author='Chengfei He',
       author_email='che43@wisc.edu',
       include_package_data=True,
