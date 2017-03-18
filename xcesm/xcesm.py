@@ -107,7 +107,7 @@ class Utilities(object):
 
         return xr.DataArray(rgd_data, coords=[lat,lon], dims=['lat', 'lon'])
 
-    def gbmean(self):
+    def globalmean(self):
 
         lonmn = self._obj.mean('lon')
         lat_rad = xr.ufuncs.deg2rad(self._obj.lat)
@@ -152,6 +152,10 @@ class Utilities(object):
 #                & (lon < 120.5))
 #        else:
 #            raise ValueError('Loc is unsupported.')
+    def selbasin(self,region='Atlantic'):
+        basin = utl.region()
+        return self._obj.where(basin[region])
+
 
     def quickmap(self, ax=None, central_longitude=180, cmap='BlueDarkRed18'):
 
