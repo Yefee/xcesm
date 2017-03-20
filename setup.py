@@ -17,6 +17,6 @@ setup(name='xcesm',
         ],
       keywords='climate modeling modelling model gcm',
       license='MIT',
-      packages=['xcesm'],
-      install_requires=['xarray','pyresample','cartopy'],
+      packages=['xcesm', 'utils'],
+      install_requires=['xarray', 'pyresample', 'cartopy'],
       zip_safe=False)
