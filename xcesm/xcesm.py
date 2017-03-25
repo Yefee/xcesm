@@ -34,6 +34,9 @@ class CAMDiagnosis(object):
     # d18op
     @property
     def d18op(self):
+        '''
+        compute d18O precp
+        '''
         try:
             p16 = self._obj.PRECRC_H216Or + self._obj.PRECSC_H216Os + \
             self._obj.PRECRL_H216OR + self._obj.PRECSL_H216OS
@@ -47,6 +50,68 @@ class CAMDiagnosis(object):
         except:
             raise ValueError('object has no PRECRC_H216Or.')
         return d18op
+
+
+    def _compute_heat_transport(self, dsarray):
+
+        from scipy import integrate
+        '''
+        compute heat transport using surface(toa,sfc) flux
+        '''
+        lat_rad = np.deg2rad(dsarray.lat)
+        coslat = np.cos(lat_rad)
+        field = coslat * dsarray
+
+        if 'lon' in dsarray.dims:
+            field = field.mean(dim='lon')
+
+        try:
+            latax = field.get_axis_num('lat')
+        except:
+            raise ValueError('No lat coordinate!')
+
+        integral = integrate.cumtrapz(field, x=lat_rad, initial=0., axis=latax)
+
+        # radius of earth: 6.37122e6 m
+        transport = 1e-15 * 2 * np.math.pi * integral * 6.37122e6**2  # unit in PW
+
+        if isinstance(field, xr.DataArray):
+            result = field.copy()
+            result.values = transport
+        return result
+
+    # heat transport
+    @property
+    def cesm_compute_heat_transport(self):
+
+        '''
+        compute heat transport using surface(toa,sfc) flux
+        '''
+
+        OLR = self._obj.FLNT.mean('lon')
+        ASR = self._obj.FSNT.mean('lon')
+        Rtoa = ASR - OLR  # net downwelling radiation
+        LHF = self._obj.LHFLX.mean('lon')
+        SHF = self._obj.SHFLX.mean('lon')
+        LWsfc = self._obj.FLNS.mean('lon')
+        SWsfc = -self._obj.FSNS.mean('lon')
+        #  energy flux due to snowfall
+        SnowFlux = (self._obj.PRECSC.mean('lon') + self._obj.PRECSL.mean('lon'))*1000*3.337e5
+        SurfaceRadiation = LWsfc + SWsfc  # net upward radiation from surface
+        SurfaceHeatFlux = SurfaceRadiation + LHF + SHF + SnowFlux  # net upward surface heat flux
+        Fatmin = Rtoa + SurfaceHeatFlux  # net heat flux in to atmosphere
+
+        AHT = self._compute_heat_transport(Fatmin)
+        PHT = self._compute_heat_transport(Rtoa)
+        OHT = PHT - AHT
+        return PHT, AHT, OHT
+
+
+
+
+
+
+
 
 @xr.register_dataset_accessor('pop')
 class POPDiagnosis(object):
@@ -179,7 +244,7 @@ class Utilities(object):
 #            ax = plt.axes(projection=ccrs.Orthographic(-80, 35))
 
         cmaps = nclcmaps.cmaps(cmap)
-        self._obj.plot(ax=ax,cmap = cmaps,transform=ccrs.PlateCarree(),
+        self._obj.plot(ax=ax,cmap=cmaps,transform=ccrs.PlateCarree(), infer_intervals=True,
                        cbar_kwargs={'orientation': 'horizontal',
                                     'fraction':0.09,
                                     'aspect':15})
