@@ -1,2 +1,2 @@
 include README.md
-include utils/*.nc
+include config/*.nc

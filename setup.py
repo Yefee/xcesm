@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name='xcesm',
       version='0.01',
@@ -17,7 +17,9 @@ setup(name='xcesm',
         ],
       keywords='climate modeling modelling model gcm',
       license='MIT',
-      packages=['xcesm'],
-      package_data={'xcesm':['utils/*nc']},
+      # packages=['xcesm','config'],
+      packages=find_packages(),
+      package_data={'xcesm': ['config/*.nc']},
       install_requires=['xarray', 'pyresample', 'cartopy'],
       zip_safe=False)
+print(find_packages())
