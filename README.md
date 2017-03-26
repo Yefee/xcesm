@@ -6,7 +6,7 @@ Xcesm is still in developing, right now it has the following features:
 * quick plot on global map (quickmap)
 * regrid pop output to linear grids (regrid, nearest interpolation)
 * compute global mean (gbmean, gbmeanpop)
-* diagnose AMOC, PRECP, d18O(only support for iCESM) etc.
+* diagnose AMOC, PRECP, d18O(only support for iCESM), Heat transport etc.
 * truncate ocean as several main basins (ocean_region)
 
 More feature will be added in the future.
