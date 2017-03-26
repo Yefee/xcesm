@@ -6,12 +6,13 @@ Created on Mon Mar 13 22:17:01 2017
 @author: Yefee
 """
 
+from __future__ import absolute_import
 
 import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
-import utils as utl
-
+from . import utils as utl
+from ..config import cesmconstant as cc
 
 @xr.register_dataset_accessor('cam')
 class CAMDiagnosis(object):
@@ -25,7 +26,7 @@ class CAMDiagnosis(object):
         try:
             precc = self._obj.PRECC
             precl = self._obj.PRECL
-            precp = (precc + precl) * 86400 * 1000 # convert to mm/day
+            precp = (precc + precl) * cc.sday * cc.rhofw # convert to mm/day
             precp.name = 'precp'
         except:
             raise ValueError('object has no PRECC.')
@@ -73,7 +74,7 @@ class CAMDiagnosis(object):
         integral = integrate.cumtrapz(field, x=lat_rad, initial=0., axis=latax)
 
         # radius of earth: 6.37122e6 m
-        transport = 1e-15 * 2 * np.math.pi * integral * 6.37122e6**2  # unit in PW
+        transport = 1e-15 * 2 * np.math.pi * integral * cc.rearth **2  # unit in PW
 
         if isinstance(field, xr.DataArray):
             result = field.copy()
@@ -81,7 +82,7 @@ class CAMDiagnosis(object):
         return result
 
     # heat transport
-    @property
+#    @property
     def cesm_compute_heat_transport(self):
 
         '''
@@ -96,7 +97,7 @@ class CAMDiagnosis(object):
         LWsfc = self._obj.FLNS.mean('lon')
         SWsfc = -self._obj.FSNS.mean('lon')
         #  energy flux due to snowfall
-        SnowFlux = (self._obj.PRECSC.mean('lon') + self._obj.PRECSL.mean('lon'))*1000*3.337e5
+        SnowFlux = (self._obj.PRECSC.mean('lon') + self._obj.PRECSL.mean('lon')) * cc.rhofw * cc.latice
         SurfaceRadiation = LWsfc + SWsfc  # net upward radiation from surface
         SurfaceHeatFlux = SurfaceRadiation + LHF + SHF + SnowFlux  # net upward surface heat flux
         Fatmin = Rtoa + SurfaceHeatFlux  # net heat flux in to atmosphere
