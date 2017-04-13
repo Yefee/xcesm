@@ -53,7 +53,7 @@ class CAMDiagnosis(object):
         return d18op
 
 
-    def _compute_heat_transport(self, dsarray):
+    def _compute_heat_transport(self, dsarray, method):
 
         from scipy import integrate
         '''
@@ -63,8 +63,17 @@ class CAMDiagnosis(object):
         coslat = np.cos(lat_rad)
         field = coslat * dsarray
 
-        if 'lon' in dsarray.dims:
-            field = field.mean(dim='lon')
+        if method is "Flux_adjusted":
+            field = field - field.mean("lat")
+            print("The heat transport is computed by Flux adjestment.")
+        elif method is "Flux":
+            print("The heat transport is computed by Flux.")
+        elif method is "Dynamic":
+            print("The heat transport is computed by dynamic method.")
+            raise ValueError("Dynamic method has not been implimented.")
+        else:
+            raise ValueError("Method is not supported.")
+
 
         try:
             latax = field.get_axis_num('lat')
@@ -73,7 +82,7 @@ class CAMDiagnosis(object):
 
         integral = integrate.cumtrapz(field, x=lat_rad, initial=0., axis=latax)
 
-        # radius of earth: 6.37122e6 m
+
         transport = 1e-15 * 2 * np.math.pi * integral * cc.rearth **2  # unit in PW
 
         if isinstance(field, xr.DataArray):
@@ -83,7 +92,7 @@ class CAMDiagnosis(object):
 
     # heat transport
 #    @property
-    def cesm_compute_heat_transport(self):
+    def cesm_compute_heat_transport(self, method="Flux"):
 
         '''
         compute heat transport using surface(toa,sfc) flux
@@ -99,11 +108,12 @@ class CAMDiagnosis(object):
         #  energy flux due to snowfall
         SnowFlux = (self._obj.PRECSC.mean('lon') + self._obj.PRECSL.mean('lon')) * cc.rhofw * cc.latice
         SurfaceRadiation = LWsfc + SWsfc  # net upward radiation from surface
-        SurfaceHeatFlux = SurfaceRadiation + LHF + SHF + SnowFlux  # net upward surface heat flux
+#        SurfaceHeatFlux = SurfaceRadiation + LHF + SHF + SnowFlux  # net upward surface heat flux
+        SurfaceHeatFlux = SurfaceRadiation + LHF + SHF  # net upward surface heat flux
         Fatmin = Rtoa + SurfaceHeatFlux  # net heat flux in to atmosphere
 
-        AHT = self._compute_heat_transport(Fatmin)
-        PHT = self._compute_heat_transport(Rtoa)
+        AHT = self._compute_heat_transport(Fatmin, method)
+        PHT = self._compute_heat_transport(Rtoa, method)
         OHT = PHT - AHT
         return PHT, AHT, OHT
 
@@ -178,8 +188,8 @@ class Utilities(object):
         lonmn = self._obj.mean('lon')
         lat_rad = xr.ufuncs.deg2rad(self._obj.lat)
         lat_cos = np.cos(lat_rad)
-
-        return lonmn * lat_cos / lat_cos.sum()
+        total = lonmn * lat_cos
+        return total.sum("lat") / lat_cos.sum()
 
 
     def gbmeanpop(self):
