@@ -134,7 +134,7 @@ class POPDiagnosis(object):
     @property
     def amoc(self):
         try:
-            moc = self._obj.MOC[:, 1, 0, :, :]
+            moc = self._obj.MOC.isel(transport_reg=1,moc_comp=0).copy()
             moc.values[np.abs(moc.values) < 1e-6] = np.nan
             # amoc area
             if moc.moc_z[-1] > 1e5:
@@ -143,7 +143,10 @@ class POPDiagnosis(object):
                 z_bound = moc.moc_z[(moc.moc_z > 2e2) & (moc.moc_z < 5e3)] #m
             lat_bound = moc.lat_aux_grid[
                         (moc.lat_aux_grid > 10) & (moc.lat_aux_grid < 60)]
-            amoc = moc.sel(moc_z=z_bound).sel(lat_aux_grid=lat_bound).groupby('time').max()
+            if "time" in moc.dims:
+                amoc = moc.sel(moc_z=z_bound).sel(lat_aux_grid=lat_bound).groupby('time').max()
+            else:
+                amoc = moc.sel(moc_z=z_bound).sel(lat_aux_grid=lat_bound).max()
         except:
             raise ValueError('object has no MOC.')
         return amoc
