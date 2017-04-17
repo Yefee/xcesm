@@ -157,6 +157,7 @@ class POPDiagnosis(object):
             self._obj['z_t'] /= 1e2
         else:
             pass
+        return self._obj
 
     @property
     def ocnreg(self):
@@ -168,21 +169,21 @@ class Utilities(object):
         self._obj = xarray_obj
 
     # regrid pop variables
-    def regrid(self):
+    def regrid(self, dlon=1, dlat=1):
         import pyresample
 
         lon_curv = self._obj.TLONG.values
         lon_curv[lon_curv>180] = lon_curv[lon_curv>180] - 360
         lat_curv = self._obj.TLAT.values
-        lon = np.arange(-180.,181,1)
-        lat = np.arange(-90.,91,1)
+        lon = np.arange(-180.,181,dlon)
+        lat = np.arange(-90.,91,dlat)
         lon_lin, lat_lin = np.meshgrid(lon,lat)
         lon_lin = pyresample.utils.wrap_longitudes(lon_lin)
         #define the grid
         orig_def = pyresample.geometry.SwathDefinition(lons=lon_curv, lats=lat_curv)
         targ_def = pyresample.geometry.SwathDefinition(lons=lon_lin, lats=lat_lin)
         rgd_data = pyresample.kd_tree.resample_nearest(orig_def, self._obj.values.squeeze(),
-        targ_def, radius_of_influence=1000000, fill_value=np.nan)
+        targ_def, radius_of_influence=1000000*np.sqrt(dlon**2), fill_value=np.nan)
 
         return xr.DataArray(rgd_data, coords=[lat,lon], dims=['lat', 'lon'])
 
