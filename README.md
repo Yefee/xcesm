@@ -24,17 +24,26 @@ python setup.py install
 ```
 import xarray as xr
 import xcesm
+ds = xr.open_dataset('/examples/data/salt.nc')
+# defalut to 1x1 degree
+salt_rgd = ds.SALT.utils.regrid()
+
+print(ds.SALT.shape)
+(384, 320)
+
+print(salt_rgd.shape)
+(181, 361)
 ```
 
-ds = xr.open_dataset('/examples/data/salt.nc')
-salt_rgd = ds.SALT.utils.regrid()
+
 
 * quick plot
 ```
 salt_rgd.utils.quickmap()
-![salt_distribution](https://github.com/Yefee/xcesm/tree/master/xcesm/examples/fig/salt.png)
 ```
+![salt_distribution](https://github.com/Yefee/xcesm/blob/master/xcesm/examples/fig/salt.png)
+
 
 # And more
-I don't have time to write Documentation recently, but it will be resleased this summer!
+I don't have time to write documentation recently, but it will be resleased in this summer!
 
