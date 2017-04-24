@@ -169,23 +169,54 @@ class Utilities(object):
         self._obj = xarray_obj
 
     # regrid pop variables
-    def regrid(self, dlon=1, dlat=1):
+    def regrid(self, dlon=1, dlat=1, grid_style='T'):
         import pyresample
 
-        lon_curv = self._obj.TLONG.values
+        dims = self._obj.dims
+        shape = self._obj.shape
+        temp = self._obj.values
+        temp = temp.reshape(-1,shape[-2],shape[-1])   # this requires time and z_t are at the first two axises
+        temp = temp.transpose(1,2,0)    #lat, lon rightmost
+
+        if grid_style is 'T':
+            lon_curv = self._obj.TLONG.values
+            lat_curv = self._obj.TLAT.values
+        elif grid_style is 'U':
+            lon_curv = self._obj.ULONG.values
+            lat_curv = self._obj.ULAT.values
+
+        # set lon to -180 to 180
         lon_curv[lon_curv>180] = lon_curv[lon_curv>180] - 360
-        lat_curv = self._obj.TLAT.values
+
+        # targit grid
         lon = np.arange(-180.,181,dlon)
         lat = np.arange(-90.,91,dlat)
         lon_lin, lat_lin = np.meshgrid(lon,lat)
         lon_lin = pyresample.utils.wrap_longitudes(lon_lin)
-        #define the grid
+        #define two grid systems
         orig_def = pyresample.geometry.SwathDefinition(lons=lon_curv, lats=lat_curv)
         targ_def = pyresample.geometry.SwathDefinition(lons=lon_lin, lats=lat_lin)
-        rgd_data = pyresample.kd_tree.resample_nearest(orig_def, self._obj.values.squeeze(),
+        rgd_data = pyresample.kd_tree.resample_nearest(orig_def, temp,
         targ_def, radius_of_influence=1000000*np.sqrt(dlon**2), fill_value=np.nan)
 
-        return xr.DataArray(rgd_data, coords=[lat,lon], dims=['lat', 'lon'])
+        rgd_data = rgd_data.transpose(2,0,1) #reshape back
+
+        if len(dims) > 3:
+            rgd_data = rgd_data.reshape(shape[0],shape[1],len(lat), len(lon))
+            return xr.DataArray(rgd_data, coords=[self._obj[dims[0]], self._obj[dims[1]], lat,lon],
+                                dims=[dims[0], dims[1], 'lat', 'lon'])
+
+        elif len(dims) > 2:
+            rgd_data = rgd_data.reshape(shape[0],len(lat), len(lon))
+            return xr.DataArray(rgd_data, coords=[self._obj[dims[0]], lat,lon],
+                                dims=[dims[0], 'lat', 'lon'])
+
+        elif len(dims) > 1:
+            rgd_data = rgd_data.squeeze()
+            return xr.DataArray(rgd_data, coords=[lat,lon], dims=['lat', 'lon'])
+
+        else:
+            raise ValueError('Dataarray has more than 4 dimensions.')
 
     def globalmean(self):
 
@@ -203,15 +234,15 @@ class Utilities(object):
     def zonalmean(self):
         return self._obj.mean('lon')
 
-    def selloc(self,loc='green_land', grid_method='natural'):
+    def selloc(self,loc='green_land', grid_method='regular'):
 
-        if grid_method == 'natural':
+        if grid_method == 'regular':
             lat = self._obj.lat
             lon = self._obj.lon
-        elif grid_method == 'T_grid':
+        elif grid_method == 'T':
             lat = self._obj.TLAT
             lon = self._obj.TLONG
-        elif grid_method == 'U_grid':
+        elif grid_method == 'U':
             lat = self._obj.ULAT
             lon = self._obj.ULONG
 
@@ -237,7 +268,7 @@ class Utilities(object):
         return self._obj.where(basin[region])
 
 
-    def quickmap(self, ax=None, central_longitude=180, cmap='BlueDarkRed18'):
+    def quickmap(self, ax=None, central_longitude=180, cmap='BlueDarkRed18', **kwargs):
 
         import cartopy.crs as ccrs
         from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
@@ -262,7 +293,7 @@ class Utilities(object):
         self._obj.plot(ax=ax,cmap=cmaps,transform=ccrs.PlateCarree(), infer_intervals=True,
                        cbar_kwargs={'orientation': 'horizontal',
                                     'fraction':0.09,
-                                    'aspect':15})
+                                    'aspect':15}, **kwargs)
 
         #set other properties
         ax.set_global()
