@@ -18,3 +18,23 @@ git clone https://github.com/Yefee/xcesm.git
 cd xcesm
 python setup.py install
 ```
+
+# how to use
+* regrid
+```
+import xarray as xr
+import xcesm
+```
+
+ds = xr.open_dataset('/examples/data/salt.nc')
+salt_rgd = ds.SALT.utils.regrid()
+
+* quick plot
+```
+salt_rgd.utils.quickmap()
+![salt_distribution](https://github.com/Yefee/xcesm/tree/master/xcesm/examples/fig/salt.png)
+```
+
+# And more
+I don't have time to write Documentation recently, but it will be resleased this summer!
+
