@@ -19,8 +19,8 @@ cd xcesm
 python setup.py install
 ```
 
-# how to use
-* regrid
+# How to use
+### regrid
 ```
 import xarray as xr
 import xcesm
@@ -35,9 +35,7 @@ print(salt_rgd.shape)
 (181, 361)
 ```
 
-
-
-* quick plot
+### quick plot
 ```
 salt_rgd.utils.quickmap()
 ```
@@ -45,5 +43,5 @@ salt_rgd.utils.quickmap()
 
 
 # And more
-I don't have time to write documentation recently, but it will be resleased in this summer!
+I don't have time to write documentation recently, but it will be released in this summer!
 
