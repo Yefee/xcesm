@@ -1,5 +1,5 @@
 # About xcesm
-Xcesm tries to provide a easy-to-use plugin for xarray to better handle CESM output in python. 
+Xcesm tries to provide an easy-to-use plugin for xarray to better handle CESM output in python. 
 
 # Features
 Xcesm is still in developing, right now it has the following features:
