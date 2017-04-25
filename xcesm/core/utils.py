@@ -42,6 +42,12 @@ def ocean_region():
 def open_data(var, project_name='iTRACE', **kwargs):
     return iTRACE(var, project_name).open_data(**kwargs)
 
+
+class trace_test:
+
+    def __init__(self, var, project_name='iTRACE', **kwargs):
+        self.ice, self.ico, self.igo, self.igom = iTRACE(var, project_name).open_data(**kwargs)
+
 # ITRACE: data path for iTRACE
 class iTRACE:
     def __init__(self, var, project_name='iTRACE'):
@@ -54,7 +60,14 @@ class iTRACE:
             self.DATA_PATH = os.environ['TRACE_DATA']
         else:
             self.DATA_PATH = os.environ['CESM_DATA']
-
+    
+    def _extend(self, multilevellist):
+        result = []
+        ext = result.extend
+        for ml in multilevellist:
+            ext(ml)
+        
+        return result
             
     def get_path(self):
         import glob
@@ -67,22 +80,22 @@ class iTRACE:
                 path = os.path.join(self.DATA_PATH, 'ocn/ANN')
             else:
                 pass
-            temp = glob.glob(path + '*.' + v + '.*.nc')
+            temp = glob.glob(path + '/*.' + v + '.*.nc')
             fl.append(temp)
-
+        
+        fl = self._extend(fl)
         # get subsets 
-        ico = [f for f in fl if 'ice_orb' in f or 'ico' in f]
-        ice = [f for f in fl if 'itrace.03' in f or 'ice' in f]
-        igo = [f for f in fl if 'ice_ghg_orb' in f or 'igo' in f]
-        igom = [f for f in fl if 'ice_ghg_orb_mwtr' in f or 'igom' in f]
+        ico = [f for f in fl if 'ice_orb.' in f or 'ico.' in f]
+        ice = [f for f in fl if 'itrace.03' in f or 'ice.' in f]
+        igo = [f for f in fl if 'ice_ghg_orb.' in f or 'igo.' in f]
+        igom = [f for f in fl if 'ice_ghg_orb_mwtr.' in f or 'igom.' in f]
 
         # check for iTRACE, other dataset would take effect
-        if ico and ice and igo and igom:
+        if ico and ice and igo: # need to add igom later
             fl = dict(ice=ice, ico=ico, igo=igo, igom=igom)
             self.iTRACE_flag = True
             return fl
         else:
-
             return fl
 
             
@@ -123,8 +136,8 @@ class iTRACE:
             ico = xr.open_mfdataset(data['ico'], **kwargs)
             ice = xr.open_mfdataset(data['ice'], **kwargs)
             igo = xr.open_mfdataset(data['igo'], **kwargs)
-            igom = xr.open_mfdataset(data['igom'], **kwargs)
-            return ice, ice, igo, igom
+            igom = xr.open_mfdataset(data['igo'], **kwargs)
+            return ice, ico, igo, igom
         else:
             return xr.open_mfdataset(data, **kwargs)
     
