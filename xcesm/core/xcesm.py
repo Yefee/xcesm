@@ -263,9 +263,21 @@ class Utilities(object):
 #                & (lon < 120.5))
 #        else:
 #            raise ValueError('Loc is unsupported.')
-    def selbasin(self,region='Atlantic'):
+    def _selbasin(self,region='Atlantic'):
         basin = utl.region()
         return self._obj.where(basin[region])
+
+    def Atlantic(self):
+        return self._selbasin()
+
+    def Pacific(self):
+        return self._selbasin(region='Pacific')
+
+    def Pacific_LGM(self):
+        return self._selbasin(region='Pacific_LGM')
+
+    def Southern_Ocn(self):
+        return self._selbasin(region='SouthernOcn')
 
 
     def quickmap(self, ax=None, central_longitude=180, cmap='BlueDarkRed18', **kwargs):
@@ -281,7 +293,7 @@ class Utilities(object):
         else:
             central_longitude=180
             xticks = [0, 60, 120, 180, 240, 300, 359.99]
-            print("didn't explicitly give center_lat, use 180 for defalut.")
+            print("didn't explicitly give center_lat, use 180 as defalut.")
 
 
         if ax is None:
