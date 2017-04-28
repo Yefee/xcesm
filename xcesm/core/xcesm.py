@@ -218,18 +218,48 @@ class Utilities(object):
         else:
             raise ValueError('Dataarray has more than 4 dimensions.')
 
-    def globalmean(self):
+    def globalmean(self,method='C'):
 
         lonmn = self._obj.mean('lon')
         lat_rad = xr.ufuncs.deg2rad(self._obj.lat)
         lat_cos = np.cos(lat_rad)
         total = lonmn * lat_cos
-        return total.sum("lat") / lat_cos.sum()
+        if method == 'C':
+            return total.sum("lat") / lat_cos.sum() - cc.tkfrz
+        elif method == 'K':
+            return total.sum("lat") / lat_cos.sum()
+        else:
+            raise ValueError('method not supported, use K or C instead.')
 
+    def gbmeanpop(self, grid='g16'):
 
-    def gbmeanpop(self):
+        if grid == 'g16':
+            return self._obj
         if self._obj.size > 1e5:
             return self._obj / utl.tarea_g16.sum()
+
+    def gbvolmean(self, grid='g16'):
+
+        if grid == 'g16':
+            vol = utl.dz_g16 * utl.tarea_g16
+            total = self._obj * vol
+
+        elif grid == 'g35':
+            vol = utl.dz_g35 * utl.tarea_g35
+            total = self._obj * vol
+        elif grid == 'g37':
+            vol = utl.dz_g37 * utl.tarea_g37
+            total = self._obj * vol
+        else:
+            raise ValueError('Grid is not suppported.')
+
+        if 'time' in self._obj.dims:
+            output = total.groupby('time').sum() / vol.sum()
+        else:
+            output = total.sum() / vol.sum()
+
+        output.name = self._obj.name
+        return output
 
     def zonalmean(self):
         return self._obj.mean('lon')

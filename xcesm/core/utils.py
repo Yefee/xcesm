@@ -23,7 +23,13 @@ COMP = {'precp': 'atm',
 
 DATA_PATH = os.path.join(os.path.dirname(__file__), '../config/')
 mask_g16 = xr.open_dataarray(DATA_PATH + 'REGION_MASK_gx1v6.nc')
+mask_g35 = xr.open_dataarray(DATA_PATH + 'REGION_MASK_gx3v5.nc')
+mask_g37 = xr.open_dataarray(DATA_PATH + 'REGION_MASK_gx3v7.nc')
 tarea_g16 = xr.open_dataarray(DATA_PATH + 'TAREA_gx1v6.nc')
+tarea_g35 = xr.open_dataarray(DATA_PATH + 'TAREA_gx3v5.nc')
+tarea_g37 = xr.open_dataarray(DATA_PATH + 'TAREA_gx3v7.nc')
+dz_g16 = xr.open_dataarray(DATA_PATH + 'DZ_gx1v6.nc')
+dz_g35 = xr.open_dataarray(DATA_PATH + 'DZ_gx3v5.nc')
 
 # ocean basin for pop output
 def ocean_region():
@@ -43,10 +49,17 @@ def open_data(var, project_name='iTRACE', **kwargs):
     return iTRACE(var, project_name).open_data(**kwargs)
 
 
-class trace_test:
+class open_iTrace:
 
     def __init__(self, var, project_name='iTRACE', **kwargs):
         self.ice, self.ico, self.igo, self.igom = iTRACE(var, project_name).open_data(**kwargs)
+
+class open_iTrace_forcing:
+    def __init__(self):
+        self.DATA_PATH = os.environ['iTRACE_DATA']
+        self.solin_jja = xr.open_mfdataset(os.path.join(self.DATA_PATH, 'forcing/*.SOLIN.*.JJA.nc'))
+        self.solin_djf = xr.open_mfdataset(os.path.join(self.DATA_PATH, 'forcing/*.SOLIN.*.DJF.nc'))
+        self.ghgs = xr.open_mfdataset(os.path.join(self.DATA_PATH, 'forcing/iTRACE_ghgs.nc'))
 
 # ITRACE: data path for iTRACE
 class iTRACE:
@@ -54,6 +67,7 @@ class iTRACE:
         self.var = var
         self.project_name = project_name
         self.iTRACE_flag = False
+        self.OCN_VAR = ['TEMP', 'SALT', 'VVEL', 'UVEL']
         if self.project_name == 'iTRACE':
             self.DATA_PATH = os.environ['iTRACE_DATA']
         elif self.project_name == 'TRACE':
@@ -118,12 +132,12 @@ class iTRACE:
             varlist = ['MOC']
             component = 'ocn'
         else:
-            if len(self.var) > 1:
+            if len(self.var) > 1 and isinstance(self.var, list):
                 raise ValueError('Var set is not supported yet.')
             else:
-                varlist = self.var
+                varlist = self.var.split()
                 component = 'atm'
-                if self.var not in ['atm_compp']: # modify it later
+                if self.var in self.OCN_VAR: # modify it later
                     component = 'ocn'
                            
         return varlist, component
@@ -136,8 +150,10 @@ class iTRACE:
             ico = xr.open_mfdataset(data['ico'], **kwargs)
             ice = xr.open_mfdataset(data['ice'], **kwargs)
             igo = xr.open_mfdataset(data['igo'], **kwargs)
-            igom = xr.open_mfdataset(data['igo'], **kwargs)
+            igom = xr.open_mfdataset(data['igom'], **kwargs)
             return ice, ico, igo, igom
         else:
-            return xr.open_mfdataset(data, **kwargs)
-    
+            if len(data) > 1:
+                return xr.open_mfdataset(data, **kwargs)
+            else:
+                return xr.open_dataset(data[0], **kwargs)
