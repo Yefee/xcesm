@@ -92,7 +92,7 @@ class CAMDiagnosis(object):
 
     # heat transport
 #    @property
-    def cesm_compute_heat_transport(self, method="Flux"):
+    def planet_heat_transport(self, method="Flux"):
 
         '''
         compute heat transport using surface(toa,sfc) flux
@@ -101,38 +101,39 @@ class CAMDiagnosis(object):
         OLR = self._obj.FLNT.mean('lon')
         ASR = self._obj.FSNT.mean('lon')
         Rtoa = ASR - OLR  # net downwelling radiation
-        LHF = self._obj.LHFLX.mean('lon')
-        SHF = self._obj.SHFLX.mean('lon')
-        LWsfc = self._obj.FLNS.mean('lon')
-        SWsfc = -self._obj.FSNS.mean('lon')
-
-#        LHF = self._obj.LHFLXOI.mean('lon')
-#        SHF = self._obj.SHFLXOI.mean('lon')
-
-#        LHF = self._obj.LHFLX.where(self._obj.FSNSOI >0)
-#        LHF.values = np.nan_to_num(LHF.values)
-#        LHF = LHF.mean('lon')
+#        LHF = self._obj.LHFLX.mean('lon')
+#        SHF = self._obj.SHFLX.mean('lon')
+#        LWsfc = self._obj.FLNS.mean('lon')
+#        SWsfc = -self._obj.FSNS.mean('lon')
 #
-##        sum('lon') / self._obj.LHFLX.shape[self._obj.LHFLX.get_axis_num('lon')]
-#        SHF = self._obj.SHFLX.where(self._obj.FSNSOI >0)
-#        SHF.values = np.nan_to_num(SHF.values)
-#        SHF = SHF.mean('lon')
-#        .sum('lon') / self._obj.SHFLX.shape[self._obj.SHFLX.get_axis_num('lon')]
+##        LHF = self._obj.LHFLXOI.mean('lon')
+##        SHF = self._obj.SHFLXOI.mean('lon')
+#
+##        LHF = self._obj.LHFLX.where(self._obj.FSNSOI >0)
+##        LHF.values = np.nan_to_num(LHF.values)
+##        LHF = LHF.mean('lon')
+##
+###        sum('lon') / self._obj.LHFLX.shape[self._obj.LHFLX.get_axis_num('lon')]
+##        SHF = self._obj.SHFLX.where(self._obj.FSNSOI >0)
+##        SHF.values = np.nan_to_num(SHF.values)
+##        SHF = SHF.mean('lon')
+##        .sum('lon') / self._obj.SHFLX.shape[self._obj.SHFLX.get_axis_num('lon')]
+#
+#
+##        LWsfc = self._obj.FLNSOI.mean('lon')
+##        SWsfc = -self._obj.FSNSOI.mean('lon')
+#        #  energy flux due to snowfall
+##        SnowFlux = (self._obj.PRECSC.mean('lon') + self._obj.PRECSL.mean('lon')) * cc.rhofw * cc.latice
+#        SurfaceRadiation = LWsfc + SWsfc  # net upward radiation from surface
+##        SurfaceHeatFlux = SurfaceRadiation + LHF + SHF + SnowFlux  # net upward surface heat flux
+#        SurfaceHeatFlux = SurfaceRadiation + LHF + SHF  # net upward surface heat flux
+#        Fatmin = Rtoa + SurfaceHeatFlux  # net heat flux in to atmosphere
 
-
-#        LWsfc = self._obj.FLNSOI.mean('lon')
-#        SWsfc = -self._obj.FSNSOI.mean('lon')
-        #  energy flux due to snowfall
-#        SnowFlux = (self._obj.PRECSC.mean('lon') + self._obj.PRECSL.mean('lon')) * cc.rhofw * cc.latice
-        SurfaceRadiation = LWsfc + SWsfc  # net upward radiation from surface
-#        SurfaceHeatFlux = SurfaceRadiation + LHF + SHF + SnowFlux  # net upward surface heat flux
-        SurfaceHeatFlux = SurfaceRadiation + LHF + SHF  # net upward surface heat flux
-        Fatmin = Rtoa + SurfaceHeatFlux  # net heat flux in to atmosphere
-
-        AHT = self._compute_heat_transport(Fatmin, method)
+#        AHT = self._compute_heat_transport(Fatmin, method)
         PHT = self._compute_heat_transport(Rtoa, method)
-        OHT = PHT - AHT
-        return PHT, AHT, OHT
+#        OHT = PHT - AHT
+#        return PHT, AHT, OHT
+        return PHT
 
 
 
@@ -168,6 +169,10 @@ class POPDiagnosis(object):
             raise ValueError('object has no MOC.')
         return amoc
 
+    @property
+    def ocnreg(self):
+        return utl.region()
+
     # convert depth unit to m
     def chdep(self):
         if self._obj.z_t[-1] > 1e5:
@@ -176,9 +181,36 @@ class POPDiagnosis(object):
             pass
         return self._obj
 
-    @property
-    def ocnreg(self):
-        return utl.region()
+    # compute ocean heat transport
+    def ocn_heat_transport(self, dlat=1, grid='g16'):
+
+        from scipy import integrate
+        # check time dimension
+        if 'time' in self._obj.dims:
+            flux = self._obj.SHF.mean('time')
+        else:
+            flux = self._obj.SHF
+
+        area = dict(g16=utl.tarea_g16, g35=utl.tarea_g35, g37=utl.tarea_g37)
+        flux_area = flux * area[grid] * 1e-4 # convert to m2
+        #
+        lat_bins = np.arange(-90,91,dlat)
+        lat = np.arange(-89.5,90,dlat)
+
+        if 'TLAT' in flux_area.coords.keys():
+            flux_lat = flux_area.groupby_bins('TLAT', lat_bins, labels = lat).sum()
+            latax = flux_lat.get_axis_num('TLAT_bins')
+        elif 'ULAT' in flux_area.coords.keys():
+            flux_lat = flux_area.groupby_bins('ULAT', lat_bins, labels = lat).sum()
+            latax = flux_lat.get_axis_num('ULAT_bins')
+        flux_lat.values = flux_lat - flux_lat.mean() # remove bias
+        flux_lat.values = np.nan_to_num(flux_lat.values)
+        integral = integrate.cumtrapz(flux_lat, x=None, initial=0., axis=latax)
+        OHT = flux_lat.copy()
+        OHT.values = integral *1e-15
+        return OHT
+
+
 
 @xr.register_dataarray_accessor('utils')
 class Utilities(object):
@@ -326,6 +358,72 @@ class Utilities(object):
     def Southern_Ocn(self):
         return self._selbasin(region='SouthernOcn')
 
+
+    # compute ocean heat transport
+    def ocn_heat_transport(self, dlat=1, grid='g16'):
+
+        from scipy import integrate
+        # check time dimension
+        if 'time' in self._obj.dims:
+            flux = self._obj.mean('time')
+        else:
+            flux = self._obj
+
+        area = dict(g16=utl.tarea_g16, g35=utl.tarea_g35, g37=utl.tarea_g37)
+        flux_area = flux * area[grid] * 1e-4 # convert to m2
+        #
+        lat_bins = np.arange(-90,91,dlat)
+        lat = np.arange(-89.5,90,dlat)
+
+        if 'TLAT' in flux_area.coords.keys():
+            flux_lat = flux_area.groupby_bins('TLAT', lat_bins, labels = lat).sum()
+            latax = flux_lat.get_axis_num('TLAT_bins')
+        elif 'ULAT' in flux_area.coords.keys():
+            flux_lat = flux_area.groupby_bins('ULAT', lat_bins, labels = lat).sum()
+            latax = flux_lat.get_axis_num('ULAT_bins')
+        flux_lat.values = flux_lat - flux_lat.mean() # remove bias
+        flux_lat.values = np.nan_to_num(flux_lat.values)
+        integral = integrate.cumtrapz(flux_lat, x=None, initial=0., axis=latax)
+        OHT = flux_lat.copy()
+        OHT.values = integral *1e-15
+        return OHT
+
+    def interp_lat(self, dlat=1):
+        import re
+        from scipy.interpolate import interp1d
+        data = self._obj
+        coords_name = list(data.dims)
+        lat = []
+        name = []
+        for n in coords_name:
+            name.append(n)
+            if re.search('lat', n, re.IGNORECASE) is not None:
+                lat.append(n)
+
+        if len(lat) > 1:
+            raise ValueError("datarray has more than one lat dim.")
+        else:
+            lat = lat.pop()
+
+        latax = data.get_axis_num(lat)
+        lat_out = np.arange(-89,90,dlat)
+        fun = interp1d(data[lat], data.values, axis=latax, fill_value='extrapolate')
+        data_out = fun(lat_out)
+
+        # reconstruct it to dataarray
+        name.pop(latax)
+        coords_out = []
+        dim = []
+        for n in name:
+            coords_out.append(data[n])
+            dim.append(n)
+
+        coords_out.insert(latax, lat_out)
+        dim.insert(latax, 'lat')
+        output = xr.DataArray(data_out, coords=coords_out, dims=dim)
+
+
+        return output
 
     def quickmap(self, ax=None, central_longitude=180, cmap='BlueDarkRed18', **kwargs):
 
