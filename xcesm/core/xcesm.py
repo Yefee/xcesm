@@ -105,8 +105,25 @@ class CAMDiagnosis(object):
         SHF = self._obj.SHFLX.mean('lon')
         LWsfc = self._obj.FLNS.mean('lon')
         SWsfc = -self._obj.FSNS.mean('lon')
+
+#        LHF = self._obj.LHFLXOI.mean('lon')
+#        SHF = self._obj.SHFLXOI.mean('lon')
+
+#        LHF = self._obj.LHFLX.where(self._obj.FSNSOI >0)
+#        LHF.values = np.nan_to_num(LHF.values)
+#        LHF = LHF.mean('lon')
+#
+##        sum('lon') / self._obj.LHFLX.shape[self._obj.LHFLX.get_axis_num('lon')]
+#        SHF = self._obj.SHFLX.where(self._obj.FSNSOI >0)
+#        SHF.values = np.nan_to_num(SHF.values)
+#        SHF = SHF.mean('lon')
+#        .sum('lon') / self._obj.SHFLX.shape[self._obj.SHFLX.get_axis_num('lon')]
+
+
+#        LWsfc = self._obj.FLNSOI.mean('lon')
+#        SWsfc = -self._obj.FSNSOI.mean('lon')
         #  energy flux due to snowfall
-        SnowFlux = (self._obj.PRECSC.mean('lon') + self._obj.PRECSL.mean('lon')) * cc.rhofw * cc.latice
+#        SnowFlux = (self._obj.PRECSC.mean('lon') + self._obj.PRECSL.mean('lon')) * cc.rhofw * cc.latice
         SurfaceRadiation = LWsfc + SWsfc  # net upward radiation from surface
 #        SurfaceHeatFlux = SurfaceRadiation + LHF + SHF + SnowFlux  # net upward surface heat flux
         SurfaceHeatFlux = SurfaceRadiation + LHF + SHF  # net upward surface heat flux

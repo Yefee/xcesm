@@ -59,7 +59,7 @@ class open_iTrace_forcing:
         self.DATA_PATH = os.environ['iTRACE_DATA']
         self.solin_jja = xr.open_mfdataset(os.path.join(self.DATA_PATH, 'forcing/*.SOLIN.*.JJA.nc'))
         self.solin_djf = xr.open_mfdataset(os.path.join(self.DATA_PATH, 'forcing/*.SOLIN.*.DJF.nc'))
-        self.ghgs = xr.open_mfdataset(os.path.join(self.DATA_PATH, 'forcing/iTRACE_ghgs.nc'))
+        self.ghgs = xr.open_mfdataset(os.path.join(self.DATA_PATH, 'forcing/iTRACE_ghgs.nc'), decode_times=False)
 
 # ITRACE: data path for iTRACE
 class iTRACE:
@@ -67,7 +67,7 @@ class iTRACE:
         self.var = var
         self.project_name = project_name
         self.iTRACE_flag = False
-        self.OCN_VAR = ['TEMP', 'SALT', 'VVEL', 'UVEL']
+        self.OCN_VAR = ['TEMP', 'SALT', 'VVEL', 'UVEL', 'N_HEAT']
         if self.project_name == 'iTRACE':
             self.DATA_PATH = os.environ['iTRACE_DATA']
         elif self.project_name == 'TRACE':
@@ -128,8 +128,15 @@ class iTRACE:
             varlist = ['PRECRC_H216Or', 'PRECSC_H216Os', 'PRECRL_H216OR', 'PRECSL_H216OS',
                        'PRECRC_H218Or', 'PRECSC_H218Os', 'PRECRL_H218OR', 'PRECSL_H218OS']
             component = 'atm'
+        elif self.var == 'flux':
+            varlist = ['FLNT', 'FSNT', 'LHFLXOI', 'SHFLXOI',
+                        'FLNSOI', 'FSNSOI', 'LHFLX', 'SHFLX', 'FSNS', 'FLNS', 'PHIS']
+            component = 'atm'
         elif self.var == 'MOC':
             varlist = ['MOC']
+            component = 'ocn'
+        elif self.var == 'ocn_heat':
+            varlist = ['N_HEAT', 'SHF']
             component = 'ocn'
         else:
             if len(self.var) > 1 and isinstance(self.var, list):
