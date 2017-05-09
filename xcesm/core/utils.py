@@ -72,8 +72,11 @@ class iTRACE:
             self.DATA_PATH = os.environ['iTRACE_DATA']
         elif self.project_name == 'TRACE':
             self.DATA_PATH = os.environ['TRACE_DATA']
+        elif self.project_name == 'LGM2CO2':
+            self.DATA_PATH = os.environ['LGM2CO2_DATA']
         else:
             self.DATA_PATH = os.environ['CESM_DATA']
+        
     
     def _extend(self, multilevellist):
         result = []
@@ -129,8 +132,7 @@ class iTRACE:
                        'PRECRC_H218Or', 'PRECSC_H218Os', 'PRECRL_H218OR', 'PRECSL_H218OS']
             component = 'atm'
         elif self.var == 'flux':
-            varlist = ['FLNT', 'FSNT', 'LHFLXOI', 'SHFLXOI',
-                        'FLNSOI', 'FSNSOI', 'LHFLX', 'SHFLX', 'FSNS', 'FLNS', 'PHIS']
+            varlist = ['FLNT', 'FSNT', 'LHFLX', 'SHFLX', 'FSNS', 'FLNS', 'LANDFRAC', 'ICEFRAC']
             component = 'atm'
         elif self.var == 'MOC':
             varlist = ['MOC']

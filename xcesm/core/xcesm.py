@@ -98,9 +98,44 @@ class CAMDiagnosis(object):
         compute heat transport using surface(toa,sfc) flux
         '''
 
+        # make sea mask from landfrac and icefrac
+        lnd = self._obj.LANDFRAC
+        ice = self._obj.ICEFRAC
+#        lnd.values = np.nan_to_num(lnd.values)
+#        ice.values = np.nan_to_num(ice.values)
+        mask = 1- (lnd + ice) * 0.5
+
         OLR = self._obj.FLNT.mean('lon')
         ASR = self._obj.FSNT.mean('lon')
         Rtoa = ASR - OLR  # net downwelling radiation
+
+
+        LHF = self._obj.LHFLX * mask
+#        LHF = self._obj.LHFLX.where(mask <0.01)
+#        LHF.values = np.nan_to_num(LHF.values)
+        LHF = LHF.mean('lon')
+
+        #        sum('lon') / co2.LHFLX.shape[co2.LHFLX.get_axis_num('lon')]
+        SHF = self._obj.SHFLX * mask
+#        SHF = self._obj.SHFLX.where(mask <0.01)
+#        SHF.values = np.nan_to_num(SHF.values)
+        SHF = SHF.mean('lon')
+
+
+
+
+
+        LWsfc = self._obj.FLNS * mask
+#        LWsfc = self._obj.FLNS.where(mask <0.01)
+#        LWsfc.values = np.nan_to_num(LWsfc.values)
+        LWsfc = LWsfc.mean('lon')
+
+
+
+        SWsfc = -self._obj.FSNS * mask
+#        SWsfc = -self._obj.FSNS.where(mask <0.01)
+#        SWsfc.values = np.nan_to_num(SWsfc.values)
+        SWsfc = SWsfc.mean('lon')
 #        LHF = self._obj.LHFLX.mean('lon')
 #        SHF = self._obj.SHFLX.mean('lon')
 #        LWsfc = self._obj.FLNS.mean('lon')
@@ -123,17 +158,21 @@ class CAMDiagnosis(object):
 ##        LWsfc = self._obj.FLNSOI.mean('lon')
 ##        SWsfc = -self._obj.FSNSOI.mean('lon')
 #        #  energy flux due to snowfall
-##        SnowFlux = (self._obj.PRECSC.mean('lon') + self._obj.PRECSL.mean('lon')) * cc.rhofw * cc.latice
-#        SurfaceRadiation = LWsfc + SWsfc  # net upward radiation from surface
-##        SurfaceHeatFlux = SurfaceRadiation + LHF + SHF + SnowFlux  # net upward surface heat flux
-#        SurfaceHeatFlux = SurfaceRadiation + LHF + SHF  # net upward surface heat flux
-#        Fatmin = Rtoa + SurfaceHeatFlux  # net heat flux in to atmosphere
+#        SnowFlux = (self._obj.PRECSC.mean('lon') + self._obj.PRECSL.mean('lon')) * cc.rhofw * cc.latice
+#        SnowFlux = SnowFlux.where(self._obj.PHIS <100)
+#        SnowFlux.values = np.nan_to_num(SnowFlux.values)
+#        SnowFlux = SnowFlux.mean('lon')
 
-#        AHT = self._compute_heat_transport(Fatmin, method)
+        SurfaceRadiation = LWsfc + SWsfc  # net upward radiation from surface
+#        SurfaceHeatFlux = SurfaceRadiation + LHF + SHF + SnowFlux  # net upward surface heat flux
+        SurfaceHeatFlux = SurfaceRadiation + LHF + SHF  # net upward surface heat flux
+        Fatmin = Rtoa + SurfaceHeatFlux  # net heat flux in to atmosphere
+
+        AHT = self._compute_heat_transport(Fatmin, method)
         PHT = self._compute_heat_transport(Rtoa, method)
-#        OHT = PHT - AHT
+        OHT = PHT - AHT
 #        return PHT, AHT, OHT
-        return PHT
+        return PHT, AHT, OHT
 
 
 
