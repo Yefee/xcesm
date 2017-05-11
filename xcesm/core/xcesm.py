@@ -399,7 +399,7 @@ class Utilities(object):
 
 
     # compute ocean heat transport
-    def ocn_heat_transport(self, dlat=1, grid='g16'):
+    def ocn_heat_transport(self, dlat=1, grid='g16', method='Flux_adjusted'):
 
         from scipy import integrate
         # check time dimension
@@ -409,7 +409,8 @@ class Utilities(object):
             flux = self._obj
 
         area = dict(g16=utl.tarea_g16, g35=utl.tarea_g35, g37=utl.tarea_g37)
-        flux_area = flux * area[grid] * 1e-4 # convert to m2
+        flux_area = flux.copy()
+        flux_area.values = flux * area[grid] * 1e-4 # convert to m2
         #
         lat_bins = np.arange(-90,91,dlat)
         lat = np.arange(-89.5,90,dlat)
@@ -418,12 +419,21 @@ class Utilities(object):
             flux_lat = flux_area.groupby_bins('TLAT', lat_bins, labels = lat).sum()
             latax = flux_lat.get_axis_num('TLAT_bins')
         elif 'ULAT' in flux_area.coords.keys():
-            flux_lat = flux_area.groupby_bins('ULAT', lat_bins, labels = lat).sum()
-            latax = flux_lat.get_axis_num('ULAT_bins')
-        flux_lat.values = flux_lat - flux_lat.mean() # remove bias
-        flux_lat.values = np.nan_to_num(flux_lat.values)
+            flux_area = flux_area.rename({"ULAT":"TLAT"})
+            flux_lat = flux_area.groupby_bins('TLAT', lat_bins, labels = lat).sum()
+            latax = flux_lat.get_axis_num('TLAT_bins')
+
+        if method == "Flux_adjusted":
+            flux_lat.values = flux_lat - flux_lat.mean() # remove bias
+        elif method == "Flux":
+            pass
+        else:
+            raise ValueError("method is not suppoprted.")
+
+        flux_lat.values = -np.flip(flux_lat.values, 0)   # integrate from north pole
         integral = integrate.cumtrapz(flux_lat, x=None, initial=0., axis=latax)
         OHT = flux_lat.copy()
+        OHT["TLAT_bins"] = np.flip(flux_lat.TLAT_bins.values, 0)
         OHT.values = integral *1e-15
         return OHT
 
