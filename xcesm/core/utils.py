@@ -138,7 +138,7 @@ class iTRACE:
             varlist = ['MOC']
             component = 'ocn'
         elif self.var == 'ocn_heat':
-            varlist = ['N_HEAT', 'SHF', 'ADVT', 'ADVT_ISOP', 'ADVT_SUBM']
+            varlist = ['N_HEAT', 'SHF', 'ADVT', 'ADVT_ISOP', 'ADVT_SUBM', 'HDIFT']
             component = 'ocn'
         else:
             if len(self.var) > 1 and isinstance(self.var, list):

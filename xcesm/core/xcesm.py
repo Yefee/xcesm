@@ -411,6 +411,8 @@ class Utilities(object):
         area = dict(g16=utl.tarea_g16, g35=utl.tarea_g35, g37=utl.tarea_g37)
         flux_area = flux.copy()
         flux_area.values = flux * area[grid] * 1e-4 # convert to m2
+
+#        flux_area = flux_area - flux_area.mean() / area[grid].mean() # remove global mean first
         #
         lat_bins = np.arange(-90,91,dlat)
         lat = np.arange(-89.5,90,dlat)
