@@ -352,6 +352,14 @@ class Utilities(object):
     def zonalmean(self):
         return self._obj.mean('lon')
 
+    def meridionalmean(self):
+
+        lat_rad = np.deg2rad(self._obj.lat)
+        coslat = np.cos(lat_rad)
+        field = coslat * self._obj
+
+        return field.sum() / coslat.sum()
+
     def selloc(self,loc='green_land', grid_method='regular'):
 
         if grid_method == 'regular':
@@ -425,10 +433,13 @@ class Utilities(object):
             flux_lat = flux_area.groupby_bins('TLAT', lat_bins, labels = lat).sum()
             latax = flux_lat.get_axis_num('TLAT_bins')
 
+
         if method == "Flux_adjusted":
+            flux_lat[np.abs(flux_lat/flux_lat.max())<0.5e-2] = np.NaN
             flux_lat.values = flux_lat - flux_lat.mean() # remove bias
+            flux_lat = flux_lat.fillna(0)
         elif method == "Flux":
-            pass
+            flux_lat = flux_lat.fillna(0)
         else:
             raise ValueError("method is not suppoprted.")
 
