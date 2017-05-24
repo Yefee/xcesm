@@ -390,11 +390,11 @@ class Utilities(object):
 #        else:
 #            raise ValueError('Loc is unsupported.')
     def _selbasin(self,region='Atlantic'):
-        basin = utl.region()
+        basin = utl.ocean_region()
         return self._obj.where(basin[region])
 
     def Atlantic(self):
-        return self._selbasin()
+        return self._selbasin(region='Atlantic')
 
     def Pacific(self):
         return self._selbasin(region='Pacific')
