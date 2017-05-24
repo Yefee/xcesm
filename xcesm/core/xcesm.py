@@ -360,7 +360,7 @@ class Utilities(object):
 
         return field.sum() / coslat.sum()
 
-    def selloc(self,loc='green_land', grid_method='regular'):
+    def selloc(self,loc='Green_land', grid_method='regular'):
 
         if grid_method == 'regular':
             lat = self._obj.lat

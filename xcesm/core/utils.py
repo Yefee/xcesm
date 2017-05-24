@@ -31,6 +31,11 @@ tarea_g37 = xr.open_dataarray(DATA_PATH + 'TAREA_gx3v7.nc')
 dz_g16 = xr.open_dataarray(DATA_PATH + 'DZ_gx1v6.nc')
 dz_g35 = xr.open_dataarray(DATA_PATH + 'DZ_gx3v5.nc')
 
+# oxygen isotope data
+hulu = xr.open_dataarray(DATA_PATH + 'hulu_d18o.nc')
+gisp2 = xr.open_dataarray(DATA_PATH + 'gisp2_d18o.nc')
+
+
 # ocean basin for pop output
 def ocean_region():
 
