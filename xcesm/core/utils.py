@@ -72,7 +72,7 @@ class iTRACE:
         self.var = var
         self.project_name = project_name
         self.iTRACE_flag = False
-        self.OCN_VAR = ['TEMP', 'SALT', 'VVEL', 'UVEL', 'N_HEAT']
+        self.OCN_VAR = ['TEMP', 'SALT', 'VVEL', 'UVEL', 'N_HEAT', 'WVEL']
         if self.project_name == 'iTRACE':
             self.DATA_PATH = os.environ['iTRACE_DATA']
         elif self.project_name == 'TRACE':
@@ -139,11 +139,17 @@ class iTRACE:
         elif self.var == 'flux':
             varlist = ['FLNT', 'FSNT', 'LHFLX', 'SHFLX', 'FSNS', 'FLNS', 'LANDFRAC', 'ICEFRAC']
             component = 'atm'
+        elif self.var == 'flux-toa':
+            varlist = ['FLNT', 'FSNT']
+            component = 'atm'
         elif self.var == 'MOC':
             varlist = ['MOC']
             component = 'ocn'
         elif self.var == 'ocn_heat':
-            varlist = ['N_HEAT', 'SHF', 'ADVT', 'ADVT_ISOP', 'ADVT_SUBM', 'HDIFT']
+            varlist = ['SHF', 'ADVT', 'ADVT_ISOP', 'ADVT_SUBM', 'HDIFT']
+            component = 'ocn'
+        elif self.var == 'path':
+            varlist = ['PA_P', 'TH_P']
             component = 'ocn'
         else:
             if len(self.var) > 1 and isinstance(self.var, list):
