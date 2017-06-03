@@ -168,7 +168,6 @@ class POPDiagnosis(object):
     def ocnreg(self):
         return utl.region()
 
-
     @property
     def path(self):
         return self._obj.PA_P / self._obj.TH_P
@@ -180,6 +179,25 @@ class POPDiagnosis(object):
         else:
             pass
         return self._obj
+
+    def _selbasin(self,region='Atlantic'):
+        basin = utl.ocean_region()
+        return self._obj.where(basin[region])
+
+    def Atlantic(self):
+        return self._selbasin(region='Atlantic')
+
+    def Pacific(self):
+        return self._selbasin(region='Pacific')
+
+    def Pacific_LGM(self):
+        return self._selbasin(region='Pacific_LGM')
+
+    def Southern_Ocn(self):
+        return self._selbasin(region='SouthernOcn')
+
+    def North_Atlantic(self):
+        return self._selbasin(region='North_Atlantic')
 
     # compute ocean heat transport
     def ocn_heat_transport(self, dlat=1, grid='g16'):
@@ -209,7 +227,6 @@ class POPDiagnosis(object):
         OHT = flux_lat.copy()
         OHT.values = integral *1e-15
         return OHT
-
 
 
 @xr.register_dataarray_accessor('utils')
@@ -355,6 +372,9 @@ class Utilities(object):
 
     def Southern_Ocn(self):
         return self._selbasin(region='SouthernOcn')
+
+    def North_Atlantic(self):
+        return self._selbasin(region='North_Atlantic')
 
 
     # compute ocean heat transport

@@ -30,6 +30,8 @@ tarea_g35 = xr.open_dataarray(DATA_PATH + 'TAREA_gx3v5.nc')
 tarea_g37 = xr.open_dataarray(DATA_PATH + 'TAREA_gx3v7.nc')
 dz_g16 = xr.open_dataarray(DATA_PATH + 'DZ_gx1v6.nc')
 dz_g35 = xr.open_dataarray(DATA_PATH + 'DZ_gx3v5.nc')
+kmt_g16 = xr.open_dataarray(DATA_PATH + 'KMT_gx1v6.nc')
+
 
 # oxygen isotope data
 hulu = xr.open_dataarray(DATA_PATH + 'hulu_d18o.nc')
@@ -45,7 +47,8 @@ def ocean_region():
                'Pacific':  (rg==2) | ((rg==1)&((rg.TLONG>=150)& (rg.TLONG<=290))),
                'Pacific_LGM': ((rg==2) & (rg.TLAT<=40) | (rg.TLAT>=55) & (rg.TLONG >=125) |
                 (rg.TLONG>=140)) | ((rg==1)&((rg.TLONG>=150)& (rg.TLONG<=290))),
-               'SouthernOcn': rg==1}
+               'SouthernOcn': rg==1,
+               'North_Atlantic': (rg.TLAT<=70) & (rg.TLAT>=50) & ((rg.TLONG <=20) | (rg.TLONG >=280))}
 
     return regions
 
@@ -58,6 +61,7 @@ class open_iTrace:
 
     def __init__(self, var, project_name='iTRACE', **kwargs):
         self.ice, self.ico, self.igo, self.igom = iTRACE(var, project_name).open_data(**kwargs)
+        print("Data bundle has been successfully loaded!")
 
 class open_iTrace_forcing:
     def __init__(self):
