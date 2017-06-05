@@ -30,12 +30,19 @@ tarea_g35 = xr.open_dataarray(DATA_PATH + 'TAREA_gx3v5.nc')
 tarea_g37 = xr.open_dataarray(DATA_PATH + 'TAREA_gx3v7.nc')
 dz_g16 = xr.open_dataarray(DATA_PATH + 'DZ_gx1v6.nc')
 dz_g35 = xr.open_dataarray(DATA_PATH + 'DZ_gx3v5.nc')
-kmt_g16 = xr.open_dataarray(DATA_PATH + 'KMT_gx1v6.nc')
+kmt_g16 = xr.open_dataarray(DATA_PATH + 'KMT_gx1v6.nc') - 1 # land is -1, ocean starts from 0
+kmt_cube_g16 = xr.open_dataarray(DATA_PATH + 'KMT_CUBE_gx1v6.nc') # 3-D mask for kmt
 
 
 # oxygen isotope data
 hulu = xr.open_dataarray(DATA_PATH + 'hulu_d18o.nc')
 gisp2 = xr.open_dataarray(DATA_PATH + 'gisp2_d18o.nc')
+
+# Pa/Th data
+path = xr.open_dataarray(DATA_PATH + 'path_Bermuda.nc')
+
+# sea level from melt water 
+sea_level = xr.open_dataarray(DATA_PATH + 'sea_level_from_mwr.nc')
 
 
 # ocean basin for pop output
@@ -48,7 +55,7 @@ def ocean_region():
                'Pacific_LGM': ((rg==2) & (rg.TLAT<=40) | (rg.TLAT>=55) & (rg.TLONG >=125) |
                 (rg.TLONG>=140)) | ((rg==1)&((rg.TLONG>=150)& (rg.TLONG<=290))),
                'SouthernOcn': rg==1,
-               'North_Atlantic': (rg.TLAT<=70) & (rg.TLAT>=50) & ((rg.TLONG <=20) | (rg.TLONG >=280))}
+               'North_Atlantic': (((rg.TLAT<=70) & (rg.TLAT>=50) & ((rg.TLONG <=20) | (rg.TLONG >=280))) & (rg > 0))}
 
     return regions
 
@@ -115,7 +122,16 @@ class iTRACE:
         ice = [f for f in fl if 'itrace.03' in f or 'ice.' in f]
         igo = [f for f in fl if 'ice_ghg_orb.' in f or 'igo.' in f]
         igom = [f for f in fl if 'ice_ghg_orb_mwtr.' in f or 'igom.' in f]
-
+        if component == 'atm':
+            igofl = [f for f in igo if '.20ka.' in f and '0999' in f]
+            igofl.sort()
+            igom = igofl + igom
+        elif component == 'ocn':
+            igofl = [f for f in igo if '.20ka.' in f and ('0099' in f or '0199' in f or '0299' in f or '0399' in f or '0499' in f or '0599' in f or '0599' in f or '0699' in f or '0799' in f or '0899' in f or '0999' in f)]
+            igofl.sort()
+            igom = igofl + igom
+        else:
+            Warning("20ka to 19ka all forcing run data has not been loaded!")
         # check for iTRACE, other dataset would take effect
         if ico and ice and igo: # need to add igom later
             fl = dict(ice=ice, ico=ico, igo=igo, igom=igom)
