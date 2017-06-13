@@ -53,7 +53,7 @@ class CAMDiagnosis(object):
         return d18op
 
 
-    def _compute_heat_transport(self, dsarray, method):
+    def compute_heat_transport(self, dsarray, method):
 
         from scipy import integrate
         '''
@@ -88,7 +88,7 @@ class CAMDiagnosis(object):
         if isinstance(field, xr.DataArray):
             result = field.copy()
             result.values = transport
-        return result
+        return result.T
 
     # heat transport
 #    @property
@@ -123,11 +123,11 @@ class CAMDiagnosis(object):
             SurfaceHeatFlux = SurfaceRadiation + LHF + SHF  # net upward surface heat flux
             Fatmin = Rtoa + SurfaceHeatFlux  # net heat flux in to atmosphere
 
-            AHT = self._compute_heat_transport(Fatmin, method)
-            PHT = self._compute_heat_transport(Rtoa, method)
+            AHT = self.compute_heat_transport(Fatmin, method)
+            PHT = self.compute_heat_transport(Rtoa, method)
             OHT = PHT - AHT
         except:
-            PHT = self._compute_heat_transport(Rtoa, method)
+            PHT = self.compute_heat_transport(Rtoa, method)
             AHT = None
             OHT = None
 
