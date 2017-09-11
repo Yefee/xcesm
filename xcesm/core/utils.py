@@ -32,10 +32,20 @@ huw_g16 = xr.open_dataarray(DATA_PATH + 'HUW_gx1v6.nc')
 hus_g16 = xr.open_dataarray(DATA_PATH + 'HUS_gx1v6.nc')
 dxu_g16 = xr.open_dataarray(DATA_PATH + 'DXU_gx1v6.nc')
 dyu_g16 = xr.open_dataarray(DATA_PATH + 'DYU_gx1v6.nc')
+dxt_g16 = xr.open_dataarray(DATA_PATH + 'DXT_gx1v6.nc')
+dyt_g16 = xr.open_dataarray(DATA_PATH + 'DYT_gx1v6.nc')
+angle_g16 = xr.open_dataarray(DATA_PATH + 'ANGLE_gx1v6.nc')
 dz_g16 = xr.open_dataarray(DATA_PATH + 'DZ_gx1v6.nc')
 dz_g35 = xr.open_dataarray(DATA_PATH + 'DZ_gx3v5.nc')
 kmt_g16 = xr.open_dataarray(DATA_PATH + 'KMT_gx1v6.nc') - 1 # land is -1, ocean starts from 0
 kmt_cube_g16 = xr.open_dataarray(DATA_PATH + 'KMT_CUBE_gx1v6.nc') # 3-D mask for kmt
+
+
+hyai_t42 = xr.open_dataarray(DATA_PATH + 'hyai_t42.nc')
+hyam_t42 = xr.open_dataarray(DATA_PATH + 'hyam_t42.nc')
+hybi_t42 = xr.open_dataarray(DATA_PATH + 'hybi_t42.nc')
+hybm_t42 = xr.open_dataarray(DATA_PATH + 'hybm_t42.nc')
+
 
 
 # oxygen isotope data
@@ -44,6 +54,9 @@ gisp2 = xr.open_dataarray(DATA_PATH + 'gisp2_d18o.nc')
 
 # Pa/Th data
 path = xr.open_dataarray(DATA_PATH + 'path_Bermuda.nc')
+
+# Dome C temp reconstruction
+domec = xr.open_dataarray(DATA_PATH + 'domeC_temp.nc')
 
 # sea level from melt water 
 sea_level = xr.open_dataarray(DATA_PATH + 'sea_level_from_mwr.nc')
@@ -56,6 +69,8 @@ def ocean_region():
 
     regions = {'Atlantic': (rg==6) | ((rg==1)&((rg.TLONG>=300) | (rg.TLONG<=20))),
                'Pacific':  (rg==2) | ((rg==1)&((rg.TLONG>=150)& (rg.TLONG<=290))),
+               'Indo_Pacific': (rg==2) | ((rg==1)&((rg.TLONG>=25) & (rg.TLONG<=290))) | (rg==3),
+               'Arc_Atlantic': (rg>5) | ((rg==1)&((rg.TLONG>=290) & (rg.TLONG<=25))),
                'Pacific_LGM': ((rg==2) & (rg.TLAT<=40) | (rg.TLAT>=55) & (rg.TLONG >=125) |
                 (rg.TLONG>=140)) | ((rg==1)&((rg.TLONG>=150)& (rg.TLONG<=290))),
                'SouthernOcn': rg==1,
@@ -87,7 +102,9 @@ class iTRACE:
         self.var = var
         self.project_name = project_name
         self.iTRACE_flag = False
-        self.OCN_VAR = ['TEMP', 'SALT', 'VVEL', 'UVEL', 'N_HEAT', 'WVEL']
+        self.OCN_VAR = ['TEMP', 'SALT', 'VVEL', 'UVEL', 'N_HEAT', 'WVEL', 
+                        'VNT', 'RHO', 'MOC', 'VISOP', 'UISOP', 'VSUBM',
+                        'USUBM']
         if self.project_name == 'iTRACE':
             self.DATA_PATH = os.environ['iTRACE_DATA']
         elif self.project_name == 'TRACE':
@@ -171,6 +188,18 @@ class iTRACE:
             component = 'ocn'
         elif self.var == 'ocn_heat':
             varlist = ['SHF', 'ADVT', 'ADVT_ISOP', 'ADVT_SUBM', 'HDIFT']
+            component = 'ocn'
+        elif self.var == 'uvt':
+            varlist = ['UVEL', 'VVEL', 'TEMP']
+            component = 'ocn'
+        elif self.var == 'uivit':
+            varlist = ['UISOP', 'VISOP', 'TEMP']
+            component = 'ocn'
+        elif self.var == 'usvst':
+            varlist = ['USUBM', 'VSUBM', 'TEMP']
+            component = 'ocn'
+        elif self.var == 'uvt-total':
+            varlist = ['USUBM', 'VSUBM', 'TEMP', 'UISOP', 'VISOP','VVEL', 'UVEL']
             component = 'ocn'
         elif self.var == 'path':
             varlist = ['PA_P', 'TH_P']

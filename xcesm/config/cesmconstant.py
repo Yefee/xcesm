@@ -86,7 +86,7 @@ cpice = SHR_CONST_CPICE
 latice = SHR_CONST_LATICE
 
 # latent heat of evaporation ~ J/kg
-larvap = SHR_CONST_LATVAP
+latvap = SHR_CONST_LATVAP
 
 # latent heat of sublimation ~ J/kg
 latsub = SHR_CONST_LATSUB
@@ -96,3 +96,6 @@ ocn_ref_sal = SHR_CONST_OCN_REF_SAL
 
 # ice ref salinity (psu)
 ice_ref_sal = SHR_CONST_ICE_REF_SAL
+
+# cappa in atmos
+cappa = (SHR_CONST_RGAS/SHR_CONST_MWDAIR)/SHR_CONST_CPDAIR  #! R/Cp

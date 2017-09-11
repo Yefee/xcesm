@@ -53,6 +53,7 @@ class CAMDiagnosis(object):
         return d18op
 
 
+
     def compute_heat_transport(self, dsarray, method):
 
         from scipy import integrate
@@ -155,7 +156,7 @@ class POPDiagnosis(object):
             else:
                 z_bound = moc.moc_z[(moc.moc_z > 2e2) & (moc.moc_z < 5e3)] #m
             lat_bound = moc.lat_aux_grid[
-                        (moc.lat_aux_grid > 10) & (moc.lat_aux_grid < 60)]
+                        (moc.lat_aux_grid > 40) & (moc.lat_aux_grid < 80)]
             if "time" in moc.dims:
                 amoc = moc.sel(moc_z=z_bound).sel(lat_aux_grid=lat_bound).groupby('time').max()
             else:
@@ -187,8 +188,14 @@ class POPDiagnosis(object):
     def Atlantic(self):
         return self._selbasin(region='Atlantic')
 
+    def Arc_Atlantic(self):
+        return self._selbasin(region='Arc_Atlantic')
+
     def Pacific(self):
         return self._selbasin(region='Pacific')
+
+    def Indo_Pacific(self):
+        return self._selbasin(region='Indo_Pacific')
 
     def Pacific_LGM(self):
         return self._selbasin(region='Pacific_LGM')
@@ -229,6 +236,85 @@ class POPDiagnosis(object):
         return OHT
 
 
+    def mass_streamfun(self, dlat = 0.6, dlon = 0.1, OHT=False, region='global'):
+        '''
+        compute mass stream function in theta coordinates.
+        reference to Ferrari and Ferreira 2011.
+        '''
+        dz = utl.dz_g16 * 1e-2 #convert to m
+        angle = utl.angle_g16
+        angle['ULONG'] = self._obj.ULONG # fix Ulong lost bug
+
+        # meridional velocity
+        VVEL = (self._obj.UVEL * np.sin(angle) + self._obj.VVEL * np.cos(angle)) * 1e-2 # convert to m
+
+        # check region
+        if region=='Global':
+            T = self._obj.TEMP
+        elif region == 'Indo_Pacific':
+            VVEL = VVEL.utils.Indo_Pacific()
+            T = self._obj.TEMP.utils.Indo_Pacific()
+        elif region == 'Arc_Atlantic':
+            VVEL = VVEL.utils.Arc_Atlantic()
+            T = self._obj.TEMP.utils.Arc_Atlantic()
+        else:
+            raise ValueError('region is not supported.')
+
+        T = T.utils.regrid(dlat=dlat, dlon=dlon)
+        V = VVEL.utils.regrid(grid_style='U', dlat=dlat, dlon=dlon)
+
+        # dxdz
+        latrad = np.deg2rad(V.lat)
+        lonrad = np.deg2rad(V.lon)
+        dlon = lonrad[1] - lonrad[0]
+        dx = cc.rearth * np.cos(latrad) * dlon # unit in m
+
+        dzdx = dz * dx
+        work = V * dzdx
+#        work = work.fillna(0) # fill nan as 0
+        Tmin = np.floor(T.min())
+        Tmax = np.round(T.max())
+
+        y = 0   # lat index
+        k = 0   # theta index
+        dt = 0.5    # theta resolution
+        temp_range = np.arange(Tmin,Tmax,dt)
+        Psi = np.zeros([len(work.lat),len(temp_range)])
+        for t in temp_range:
+            y = 0
+            for l in work.lat:
+                work1 = work.sel(lat=l).values
+                Tsel = T.sel(lat=l).values
+                if t <= np.nanmax(Tsel):
+                    Psi[y, k] = np.nansum(work1[(Tsel>=np.nanmin(Tsel)) & (Tsel<=t)])
+                else:
+                    Psi[y, k] = np.NaN
+                y += 1
+            k += 1
+
+        Psi = Psi * 1e-6 # convert to Sv
+        Psi[Psi==0] = np.NaN
+        Psi = -xr.DataArray(Psi, coords={'lat':work.lat, 'theta': temp_range},
+                                dims=['lat', 'theta'])
+
+        # smooth the stream function to remove noise
+        Psi = Psi.rolling(lat=11, center=True).mean()
+        Psi = Psi.rolling(theta=3, center=True).mean()
+
+        if OHT:
+            from scipy import integrate
+            Psim3 = Psi * 1e6 # to m3/s
+            Psim3 = Psim3.fillna(0)
+            Psim3HT = Psim3 * cc.rhosw * cc.cpsw * 1e-15 # to PW
+            theta_ax = Psim3HT.get_axis_num('theta')
+            integral = integrate.cumtrapz(Psim3HT, x=Psim3HT.theta, initial=0., axis=theta_ax)
+            OHT = xr.DataArray(integral, coords={'lat':Psi.lat, 'theta': temp_range},
+                                        dims=['lat', 'theta'])
+            return Psi.T, OHT.T
+        else:
+            return Psi.T
+
+
 @xr.register_dataarray_accessor('utils')
 class Utilities(object):
     def __init__(self, xarray_obj):
@@ -255,8 +341,8 @@ class Utilities(object):
         lon_curv[lon_curv>180] = lon_curv[lon_curv>180] - 360
 
         # targit grid
-        lon = np.arange(-180.,181,dlon)
-        lat = np.arange(-90.,91,dlat)
+        lon = np.arange(-180.,180.01,dlon)
+        lat = np.arange(-90.,89.999,dlat)
         lon_lin, lat_lin = np.meshgrid(lon,lat)
         lon_lin = pyresample.utils.wrap_longitudes(lon_lin)
         #define two grid systems
@@ -364,8 +450,14 @@ class Utilities(object):
     def Atlantic(self):
         return self._selbasin(region='Atlantic')
 
+    def Arc_Atlantic(self):
+        return self._selbasin(region='Arc_Atlantic')
+
     def Pacific(self):
         return self._selbasin(region='Pacific')
+
+    def Indo_Pacific(self):
+        return self._selbasin(region='Indo_Pacific')
 
     def Pacific_LGM(self):
         return self._selbasin(region='Pacific_LGM')
@@ -422,6 +514,175 @@ class Utilities(object):
 
         return OHT
 
+
+    def hybrid_to_pressure(self, stride='m', P0=100000.):
+        """
+        Brought from darpy:https://github.com/darothen/darpy/blob/master/darpy/analysis.py
+        Convert hybrid vertical coordinates to pressure coordinates
+        corresponding to model sigma levels.
+        Parameters
+        ----------
+        data : xarray.Dataset
+            The dataset to inspect for computing vertical levels
+        stride : str, either 'm' or 'i'
+            Indicate if the field is on the model level interfaces or
+            middles for referencing the correct hybrid scale coefficients
+        P0 : float, default = 1000000.
+            Default reference pressure in Pa, used as a fallback.
+        """
+
+        # A, B coefficients
+        a = dict(i42=utl.hyai_t42, m42=utl.hyam_t42)
+        b = dict(i42=utl.hybi_t42, m42=utl.hybm_t42)
+
+        if stride == 'm':
+            a = a['m42']
+            b = b['m42']
+        else:
+            a = a['i42']
+            b = b['i42']
+
+        P0_ref = P0
+        PS = self._obj  # Surface pressure field
+
+        pres_sigma = a*P0_ref + b*PS
+
+        return pres_sigma
+
+    def shuffle_dim(self, dim='lev'):
+
+        data = self._obj
+        ind_lev = data.get_axis_num('lev')
+        dim = list(data.dims)
+        dim.pop(ind_lev)
+        dim_new = ['lev'] + dim
+        data = data.transpose(*dim_new)
+        return data
+
+    def interp_to_pressure(self, coord_vals, new_coord_vals, interpolation='lin'):
+        """
+        browwed from darpy
+        tested with NCL code.
+        Interpolate all columns simultaneously by iterating over
+        vertical dimension of original dataset, following methodology
+        used in UV-CDAT.
+        Parameters
+        ----------
+        data : xarray.DataArray
+            The data (array) of values to be interpolated
+        coord_vals : xarray.DataArray
+            An array containing a 3D field to be used as an alternative vertical coordinate
+        new_coord_vals : iterable
+            New coordinate values to inerpolate to
+        reverse_coord : logical, default=False
+            Indicates that the coord *increases* from index 0 to n; should be "True" when
+            interpolating pressure fields in CESM
+        interpolation : str
+            "log" or "lin", indicating the interpolation method
+        Returns
+        -------
+        list of xarray.DataArrays of length equivalent to that of new_coord_vals, with the
+        field interpolated to each value in new_coord_vals
+        """
+
+        # Shuffle dims so that 'lev' is first for simplicity
+        data = self._obj
+        data_orig_dim = list(data.dims)
+        data = self.shuffle_dim(data)
+
+        coords_out = {'lev': new_coord_vals}
+        for c in data.dims:
+            if c == 'lev':
+                continue
+            coords_out[c] = data.coords[c]
+
+
+        # Find the 'lev' axis for interpolating
+        orig_shape = data.shape
+        axis = data.get_axis_num('lev')
+        n_lev = orig_shape[axis]
+
+        n_interp = len(new_coord_vals)  # Number of interpolant levels
+
+        data_interp_shape = [n_interp, ] + list(orig_shape[1:])
+        data_new = np.zeros(data_interp_shape)
+
+        # Shape of array at any given level
+        flat_shape = coord_vals.isel(lev=0).shape
+
+        # Loop over the interpolant levels
+        for ilev in range(n_interp):
+
+            lev = new_coord_vals[ilev]
+
+            P_abv = np.ones(flat_shape)
+            # Array on level above, below
+            A_abv, A_bel = -1.*P_abv, -1.*P_abv
+            # Coordinate on level above, below
+            P_abv, P_bel = -1.*P_abv, -1.*P_abv
+
+            # Mask area where coordinate == levels
+            P_eq = np.ma.masked_equal(P_abv, -1)
+
+            # Loop from the second sigma level to the last one
+            for i in range(1, n_lev):
+
+                a = np.ma.greater_equal(coord_vals.isel(lev=i), lev)
+                b = np.ma.less_equal(coord_vals.isel(lev=i - 1), lev)
+
+
+                # Now, if the interpolant level is between the two
+                # coordinate levels, then we can use these two levels for the
+                # interpolation.
+                a = (a & b)
+
+                # Coordinate on level above, below
+                P_abv = np.where(a, coord_vals[i], P_abv)
+                P_bel = np.where(a, coord_vals[i - 1], P_bel)
+                # Array on level above, below
+                A_abv = np.where(a, data[i], A_abv)
+                A_bel = np.where(a, data[i-1], A_bel)
+
+                P_eq = np.where(coord_vals[i] == lev, data[i], P_eq)
+
+            # If no data below, set to missing value; if there is, set to
+            # (interpolating) level
+            P_val = np.ma.masked_where((P_bel == -1), np.ones_like(P_bel)*lev)
+
+            # Calculate interpolation
+            if interpolation == 'log':
+                tl = np.log(P_val/P_bel)/np.log(P_abv/P_bel)*(A_abv - A_bel) + A_bel
+            elif interpolation == 'lin':
+                tl = A_bel + (P_val-P_bel)*(A_abv - A_bel)/(P_abv - P_bel)
+            else:
+                raise ValueError("Don't know how to interpolate '{}'".format(interpolation))
+            tl.fill_value = np.nan
+
+            # Copy into result array, masking where values are missing
+            # because of bad interpolation (out of bounds, etc.)
+            tl[tl.mask] = np.nan
+            data_new[ilev] = tl
+
+        dataout = xr.DataArray(data_new, coords=coords_out, dims=data.dims)
+        dataout = dataout.transpose(*data_orig_dim)
+        return dataout
+
+
+    def mass_streamfun(self):
+
+        from scipy import integrate
+
+        data = self._obj
+#        lonlen = len(data.lon)
+        if 'lon' in data.dims:
+            data = data.fillna(0).mean('lon')
+        levax = data.get_axis_num('lev')
+        stream = integrate.cumtrapz(data * np.cos(np.deg2rad(data.lat)), x=data.lev * 1e2, initial=0., axis=levax)
+        stream = stream * 2 * np.pi  / cc.g * cc.rearth * 1e-9
+        stream = xr.DataArray(stream, coords=data.coords, dims=data.dims)
+
+        return stream
+
     def interp_lat(self, dlat=1):
         import re
         from scipy.interpolate import interp1d
@@ -456,6 +717,9 @@ class Utilities(object):
         dim.insert(latax, 'lat')
         output = xr.DataArray(data_out, coords=coords_out, dims=dim)
 
+        # get attributes back
+        if data.name is not None:
+            output = output.rename(data.name)
 
         return output
 
