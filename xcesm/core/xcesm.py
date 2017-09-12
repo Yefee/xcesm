@@ -52,7 +52,25 @@ class CAMDiagnosis(object):
             raise ValueError('object has no PRECRC_H216Or.')
         return d18op
 
+    # dDp
+    @property
+    def dDp(self):
+        '''
+        compute d18O precp
+        '''
+        try:
+            p16 = self._obj.PRECRC_H216Or + self._obj.PRECSC_H216Os + \
+            self._obj.PRECRL_H216OR + self._obj.PRECSL_H216OS
 
+            pD = self._obj.PRECRC_HDOr + self._obj.PRECSC_HDOs + \
+            self._obj.PRECRL_HDOR + self._obj.PRECSL_HDOS
+
+            p16.values[p16.values < 1e-50] = np.nan
+            dDp = (pD / p16 -1)*1000
+            dDp.name = 'dDp'
+        except:
+            raise ValueError('object has no PRECRC_H216Or.')
+        return dDp
 
     def compute_heat_transport(self, dsarray, method):
 
