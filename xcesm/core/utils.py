@@ -57,7 +57,7 @@ gisp2 = xr.open_dataarray(DATA_PATH + 'gisp2_d18o.nc')
 path = xr.open_dataarray(DATA_PATH + 'path_Bermuda.nc')
 
 # Dome C temp reconstruction
-domec = xr.open_dataarray(DATA_PATH + 'domeC_temp.nc')
+domec = xr.open_dataset(DATA_PATH + 'domeC_dD_temp.nc')
 
 # sea level from melt water 
 sea_level = xr.open_dataarray(DATA_PATH + 'sea_level_from_mwr.nc')

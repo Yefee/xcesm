@@ -46,7 +46,7 @@ class CAMDiagnosis(object):
             self._obj.PRECRL_H218OR + self._obj.PRECSL_H218OS
 
             p16.values[p16.values < 1e-50] = np.nan
-            d18op = (p18 / p16 -1)*1000
+            d18op = (p18 / p16 - 1)*1000
             d18op.name = 'd18op'
         except:
             raise ValueError('object has no PRECRC_H216Or.')
@@ -66,7 +66,7 @@ class CAMDiagnosis(object):
             self._obj.PRECRL_HDOR + self._obj.PRECSL_HDOS
 
             p16.values[p16.values < 1e-50] = np.nan
-            dDp = (pD / p16 -1)*1000
+            dDp = (pD / p16 - 1)*1000
             dDp.name = 'dDp'
         except:
             raise ValueError('object has no PRECRC_H216Or.')
