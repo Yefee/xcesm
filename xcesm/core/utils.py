@@ -13,6 +13,8 @@ locations = {'Green_land': [72, 73, 321, 323],
 SETS = {'precp': ['PRECC', 'PRECL'],
         'd18op': ['PRECRC_H216Or', 'PRECSC_H216Os', 'PRECRL_H216OR', 'PRECSL_H216OS',
                   'PRECRC_H218Or', 'PRECSC_H218Os', 'PRECRL_H218OR', 'PRECSL_H218OS'],
+        'dDp': ['PRECRC_H216Or', 'PRECSC_H216Os', 'PRECRL_H216OR', 'PRECSL_H216OS',
+                  'PRECRC_HDOr', 'PRECSC_HDOs', 'PRECRL_HDOR', 'PRECSL_HDOS'],
         'd18ov': ['H216Or', 'H216Os', 'H216OR', 'H216OS',
                   'H218Or', 'H218Os', 'H218OR', 'H218OS'],
         'moc': ['MOC']}
@@ -180,6 +182,10 @@ class iTRACE:
         elif self.var == 'd18op':
             varlist = ['PRECRC_H216Or', 'PRECSC_H216Os', 'PRECRL_H216OR', 'PRECSL_H216OS',
                        'PRECRC_H218Or', 'PRECSC_H218Os', 'PRECRL_H218OR', 'PRECSL_H218OS']
+            component = 'atm'
+        elif self.var == 'dDp':
+            varlist = ['PRECRC_H216Or', 'PRECSC_H216Os', 'PRECRL_H216OR', 'PRECSL_H216OS',
+                       'PRECRC_HDOr', 'PRECSC_HDOs', 'PRECRL_HDOR', 'PRECSL_HDOS']
             component = 'atm'
         elif self.var == 'd18ov':
             varlist = ['H216Or', 'H216Os', 'H216OR', 'H216OS',
