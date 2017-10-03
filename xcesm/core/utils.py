@@ -3,7 +3,7 @@ import xarray as xr
 
 # will append when needed
 locations = {'Green_land': [72, 73, 321, 323],
-            'Green_land_s': [72, 73, 318, 325],
+            'Green_land_s': [72, 75, 310, 320],
             'Brazil': [-25, -15, 290, 310],
             'Hulu': [30.5, 33.5, 117.5, 120.5],
             'DomeC': [-76.0, -74.0, 122.0, 124.0],
