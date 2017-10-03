@@ -45,11 +45,22 @@ class CAMDiagnosis(object):
             p18 = self._obj.PRECRC_H218Or + self._obj.PRECSC_H218Os + \
             self._obj.PRECRL_H218OR + self._obj.PRECSL_H218OS
 
-            p16.values[p16.values < 1e-50] = np.nan
+#            p16.values[p16.values < 1e-50] = np.nan
             d18op = (p18 / p16 - 1)*1000
             d18op.name = 'd18op'
         except:
-            raise ValueError('object has no PRECRC_H216Or.')
+            try:
+                p16 = self._obj.H216Or + self._obj.H216Os + \
+                self._obj.H216OR + self._obj.H216OS
+    
+                p18 = self._obj.H218Or + self._obj.H218Os + \
+                self._obj.H218OR + self._obj.H218OS
+    
+    #            p16.values[p16.values < 1e-50] = np.nan
+                d18op = (p18 / p16 - 1)*1000
+                d18op.name = 'd18ov'
+            except:
+                raise ValueError('object has no PRECRC_H216Or.')
         return d18op
 
     # dDp
@@ -174,7 +185,7 @@ class POPDiagnosis(object):
             else:
                 z_bound = moc.moc_z[(moc.moc_z > 2e2) & (moc.moc_z < 5e3)] #m
             lat_bound = moc.lat_aux_grid[
-                        (moc.lat_aux_grid > 40) & (moc.lat_aux_grid < 80)]
+                        (moc.lat_aux_grid > 26) & (moc.lat_aux_grid < 80)]
             if "time" in moc.dims:
                 amoc = moc.sel(moc_z=z_bound).sel(lat_aux_grid=lat_bound).groupby('time').max()
             else:

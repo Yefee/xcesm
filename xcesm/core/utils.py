@@ -3,6 +3,7 @@ import xarray as xr
 
 # will append when needed
 locations = {'Green_land': [72, 73, 321, 323],
+            'Green_land_s': [72, 73, 318, 325],
             'Brazil': [-25, -15, 290, 310],
             'Hulu': [30.5, 33.5, 117.5, 120.5],
             'DomeC': [-76.0, -74.0, 122.0, 124.0],
@@ -12,6 +13,8 @@ locations = {'Green_land': [72, 73, 321, 323],
 SETS = {'precp': ['PRECC', 'PRECL'],
         'd18op': ['PRECRC_H216Or', 'PRECSC_H216Os', 'PRECRL_H216OR', 'PRECSL_H216OS',
                   'PRECRC_H218Or', 'PRECSC_H218Os', 'PRECRL_H218OR', 'PRECSL_H218OS'],
+        'd18ov': ['H216Or', 'H216Os', 'H216OR', 'H216OS',
+                  'H218Or', 'H218Os', 'H218OR', 'H218OS'],
         'moc': ['MOC']}
 
 COMP = {'precp': 'atm',
@@ -178,6 +181,10 @@ class iTRACE:
             varlist = ['PRECRC_H216Or', 'PRECSC_H216Os', 'PRECRL_H216OR', 'PRECSL_H216OS',
                        'PRECRC_H218Or', 'PRECSC_H218Os', 'PRECRL_H218OR', 'PRECSL_H218OS']
             component = 'atm'
+        elif self.var == 'd18ov':
+            varlist = ['H216Or', 'H216Os', 'H216OR', 'H216OS',
+                       'H218Or', 'H218Os', 'H218OR', 'H218OS']
+            component = 'atm'
         elif self.var == 'flux':
             varlist = ['FLNT', 'FSNT', 'LHFLX', 'SHFLX', 'FSNS', 'FLNS', 'LANDFRAC', 'ICEFRAC']
             component = 'atm'
@@ -221,13 +228,13 @@ class iTRACE:
         
         data = self.get_path()
         if self.iTRACE_flag:
-            ico = xr.open_mfdataset(data['ico'], **kwargs)
-            ice = xr.open_mfdataset(data['ice'], **kwargs)
-            igo = xr.open_mfdataset(data['igo'], **kwargs)
-            igom = xr.open_mfdataset(data['igom'], **kwargs)
+            ico = xr.open_mfdataset(data['ico'], **kwargs).sortby('time')
+            ice = xr.open_mfdataset(data['ice'], **kwargs).sortby('time')
+            igo = xr.open_mfdataset(data['igo'], **kwargs).sortby('time')
+            igom = xr.open_mfdataset(data['igom'], **kwargs).sortby('time')
             return ice, ico, igo, igom
         else:
             if len(data) > 1:
-                return xr.open_mfdataset(data, **kwargs)
+                return xr.open_mfdataset(data, **kwargs).sortby('time')
             else:
-                return xr.open_dataset(data[0], **kwargs)
+                return xr.open_dataset(data[0], **kwargs).sortby('time')
