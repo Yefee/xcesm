@@ -47,21 +47,28 @@ class CAMDiagnosis(object):
 
 #            p16.values[p16.values < 1e-50] = np.nan
             d18op = (p18 / p16 - 1)*1000
-            d18op.name = 'd18op'
+            d18op.name = 'd18Op'
         except:
-            try:
-                p16 = self._obj.H216Or + self._obj.H216Os + \
-                self._obj.H216OR + self._obj.H216OS
-    
-                p18 = self._obj.H218Or + self._obj.H218Os + \
-                self._obj.H218OR + self._obj.H218OS
-    
-    #            p16.values[p16.values < 1e-50] = np.nan
-                d18op = (p18 / p16 - 1)*1000
-                d18op.name = 'd18ov'
-            except:
-                raise ValueError('object has no PRECRC_H216Or.')
+            raise ValueError('object has no PRECRC_H216Or.')
         return d18op
+
+    # d18ov
+    @property
+    def d18ov(self):
+        '''
+        compute d18O precp
+        '''
+        try:
+            p16 = self._obj.H216OV
+
+            p18 = self._obj.H218OV 
+
+#            p16.values[p16.values < 1e-50] = np.nan
+            d18ov = (p18 / p16 - 1)*1000
+            d18ov.name = 'd18Ov'
+        except:
+            raise ValueError('object has no H216OV.')
+        return d18ov
 
     # dDp
     @property

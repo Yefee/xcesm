@@ -15,8 +15,7 @@ SETS = {'precp': ['PRECC', 'PRECL'],
                   'PRECRC_H218Or', 'PRECSC_H218Os', 'PRECRL_H218OR', 'PRECSL_H218OS'],
         'dDp': ['PRECRC_H216Or', 'PRECSC_H216Os', 'PRECRL_H216OR', 'PRECSL_H216OS',
                   'PRECRC_HDOr', 'PRECSC_HDOs', 'PRECRL_HDOR', 'PRECSL_HDOS'],
-        'd18ov': ['H216Or', 'H216Os', 'H216OR', 'H216OS',
-                  'H218Or', 'H218Os', 'H218OR', 'H218OS'],
+        'd18ov': ['H216OV','H218OV'],
         'moc': ['MOC']}
 
 COMP = {'precp': 'atm',
