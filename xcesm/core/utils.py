@@ -187,8 +187,7 @@ class iTRACE:
                        'PRECRC_HDOr', 'PRECSC_HDOs', 'PRECRL_HDOR', 'PRECSL_HDOS']
             component = 'atm'
         elif self.var == 'd18ov':
-            varlist = ['H216Or', 'H216Os', 'H216OR', 'H216OS',
-                       'H218Or', 'H218Os', 'H218OR', 'H218OS']
+            varlist = ['H216OV','H218OV']
             component = 'atm'
         elif self.var == 'flux':
             varlist = ['FLNT', 'FSNT', 'LHFLX', 'SHFLX', 'FSNS', 'FLNS', 'LANDFRAC', 'ICEFRAC']
