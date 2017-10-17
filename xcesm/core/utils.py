@@ -68,14 +68,21 @@ sea_level = xr.open_dataarray(DATA_PATH + 'sea_level_from_mwr.nc')
 
 
 # ocean basin for pop output
-def ocean_region():
+def ocean_region(grid='gx1v6'):
 
-    rg = mask_g16
+    if grid == 'gx1v6':
+        rg = mask_g16
+    elif grid == 'gx3v7':
+        rg = mask_g37
+    elif grid == 'gx3v5':
+        rg = mask_g35
+    else: 
+        raise ValueError('The gird is not supported.')
 
     regions = {'Atlantic': (rg==6) | ((rg==1)&((rg.TLONG>=300) | (rg.TLONG<=20))),
                'Pacific':  (rg==2) | ((rg==1)&((rg.TLONG>=150)& (rg.TLONG<=290))),
                'Indo_Pacific': (rg==2) | ((rg==1)&((rg.TLONG>=25) & (rg.TLONG<=290))) | (rg==3),
-               'Arc_Atlantic': (rg>5) | ((rg==1)&((rg.TLONG>=290) & (rg.TLONG<=25))),
+               'Arc_Atlantic': ((rg>5) & (rg!=7)) | ((rg==1)&( (rg.TLONG>=300) | (rg.TLONG<=20))),
                'Pacific_LGM': ((rg==2) & (rg.TLAT<=40) | (rg.TLAT>=55) & (rg.TLONG >=125) |
                 (rg.TLONG>=140)) | ((rg==1)&((rg.TLONG>=150)& (rg.TLONG<=290))),
                'SouthernOcn': rg==1,
@@ -141,7 +148,7 @@ class iTRACE:
                 pass
             temp = glob.glob(path + '/*.' + v + '.*.nc')
             fl.append(temp)
-        
+
         fl = self._extend(fl)
         # get subsets 
         ico = [f for f in fl if 'ice_orb.' in f or 'ico.' in f]

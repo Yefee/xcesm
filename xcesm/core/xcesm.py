@@ -217,30 +217,30 @@ class POPDiagnosis(object):
             pass
         return self._obj
 
-    def _selbasin(self,region='Atlantic'):
-        basin = utl.ocean_region()
+    def _selbasin(self, grid='gx1v6', region='Atlantic'):
+        basin = utl.ocean_region(grid)
         return self._obj.where(basin[region])
 
-    def Atlantic(self):
-        return self._selbasin(region='Atlantic')
+    def Atlantic(self, grid):
+        return self._selbasin(grid, region='Atlantic')
 
-    def Arc_Atlantic(self):
-        return self._selbasin(region='Arc_Atlantic')
+    def Arc_Atlantic(self, grid):
+        return self._selbasin(grid, region='Arc_Atlantic')
 
-    def Pacific(self):
-        return self._selbasin(region='Pacific')
+    def Pacific(self, grid):
+        return self._selbasin(grid, region='Pacific')
 
-    def Indo_Pacific(self):
-        return self._selbasin(region='Indo_Pacific')
+    def Indo_Pacific(self, grid):
+        return self._selbasin(grid, region='Indo_Pacific')
 
-    def Pacific_LGM(self):
-        return self._selbasin(region='Pacific_LGM')
+    def Pacific_LGM(self, grid):
+        return self._selbasin(grid, region='Pacific_LGM')
 
-    def Southern_Ocn(self):
-        return self._selbasin(region='SouthernOcn')
+    def Southern_Ocn(self, grid):
+        return self._selbasin(grid, region='SouthernOcn')
 
-    def North_Atlantic(self):
-        return self._selbasin(region='North_Atlantic')
+    def North_Atlantic(self, grid):
+        return self._selbasin(grid, region='North_Atlantic')
 
     # compute ocean heat transport
     def ocn_heat_transport(self, dlat=1, grid='g16'):
@@ -430,7 +430,7 @@ class Utilities(object):
 
         if grid == 'g16':
             vol = utl.dz_g16 * utl.tarea_g16
-            total = self._obj * vol
+            total = self._obj * vol.values.reshape([-1,vol.shape])
 
         elif grid == 'g35':
             vol = utl.dz_g35 * utl.tarea_g35
@@ -449,9 +449,33 @@ class Utilities(object):
         output.name = self._obj.name
         return output
 
-    def zonalmean(self):
-        return self._obj.mean('lon')
-
+    def zonalmean(self, res=1):
+        
+        coords = list(self._obj.coords)
+        
+        if 'lon' in coords:
+            return self._obj.mean('lon')
+        
+        if res == 1 :    
+            lat_center = np.arange(-89.5, 90, 1)
+            lat_bins = np.arange(-90, 91, 1)
+        elif res == 3:
+            lat_center = np.arange(-88.5, 90, 3)
+            lat_bins = np.arange(-90, 91, 3)
+        else: 
+            lat_center = np.arange(-89.5, 90, 1)
+            lat_bins = np.arange(-90, 91, 1)
+        
+        try:
+            zonal = self._obj.groupby_bins('TLAT', lat_bins, labels=lat_center).mean('stacked_nlat_nlon') 
+            zonal = zonal.rename({'TLAT_bins':'lat'})
+        except:
+            zonal = self._obj.groupby_bins('ULAT', lat_bins, labels=lat_center).mean('stacked_nlat_nlon')  
+            zonal = zonal.rename({'ULAT_bins':'lat'})
+    
+        zonal.name = self._obj.name
+        return zonal     
+                
     def meridionalmean(self):
 
         lat_rad = np.deg2rad(self._obj.lat)
@@ -479,30 +503,32 @@ class Utilities(object):
         return self._obj.where((lat > loc[0]) & (lat < loc[1]) & (lon > loc[2])
                                & (lon < loc[3]), drop=True)
 
-    def _selbasin(self,region='Atlantic'):
-        basin = utl.ocean_region()
-        return self._obj.where(basin[region])
+    def _selbasin(self, grid='gx1v6', region='Atlantic'):
+        basin = utl.ocean_region(grid)
+        ds = self._obj.where(basin[region])
+        ds.name = self._obj.name
+        return ds
 
-    def Atlantic(self):
-        return self._selbasin(region='Atlantic')
+    def Atlantic(self, grid):
+        return self._selbasin(grid, region='Atlantic')
 
-    def Arc_Atlantic(self):
-        return self._selbasin(region='Arc_Atlantic')
+    def Arc_Atlantic(self, grid):
+        return self._selbasin(grid, region='Arc_Atlantic')
 
-    def Pacific(self):
-        return self._selbasin(region='Pacific')
+    def Pacific(self, grid):
+        return self._selbasin(grid, region='Pacific')
 
-    def Indo_Pacific(self):
-        return self._selbasin(region='Indo_Pacific')
+    def Indo_Pacific(self, grid):
+        return self._selbasin(grid, region='Indo_Pacific')
 
-    def Pacific_LGM(self):
-        return self._selbasin(region='Pacific_LGM')
+    def Pacific_LGM(self, grid):
+        return self._selbasin(grid, region='Pacific_LGM')
 
-    def Southern_Ocn(self):
-        return self._selbasin(region='SouthernOcn')
+    def Southern_Ocn(self, grid):
+        return self._selbasin(grid, region='SouthernOcn')
 
-    def North_Atlantic(self):
-        return self._selbasin(region='North_Atlantic')
+    def North_Atlantic(self, grid):
+        return self._selbasin(grid, region='North_Atlantic')
 
 
     # compute ocean heat transport
