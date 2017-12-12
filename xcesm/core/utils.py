@@ -116,7 +116,7 @@ class iTRACE:
         self.iTRACE_flag = False
         self.OCN_VAR = ['TEMP', 'SALT', 'VVEL', 'UVEL', 'N_HEAT', 'WVEL', 
                         'VNT', 'RHO', 'MOC', 'VISOP', 'UISOP', 'VSUBM',
-                        'USUBM']
+                        'USUBM', 'R18O']
         if self.project_name == 'iTRACE':
             self.DATA_PATH = os.environ['iTRACE_DATA']
         elif self.project_name == 'TRACE':
