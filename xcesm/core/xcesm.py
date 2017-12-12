@@ -179,7 +179,18 @@ class POPDiagnosis(object):
     def __init__(self, xarray_obj):
         self._obj = xarray_obj
 
+    # PA/TH
+    def comp_path(self):
+        kmt = xcesm.core.utils.kmt_cube_g16
+        pa = self._obj.PA_P * kmt
+        pa = pa.sum('z_t')
 
+        th = self._obj.TH_P * kmt
+        th = th.sum('z_t')
+        path = pa / th
+        path = path * tarea
+        path = path.groupby('time').sum() / tarea.utils.North_Atlantic().sum()
+        return path.load()
     # amoc
     @property
     def amoc(self):
@@ -200,6 +211,13 @@ class POPDiagnosis(object):
         except:
             raise ValueError('object has no MOC.')
         return amoc
+    
+    @property
+    def d18ow(self):
+        d18ow = (self._obj.R18O - 1) * 1000
+        d18ow = d18ow.rename('d18ow')
+        d18ow.attrs['units'] = 'permil'
+        return d18ow
 
     @property
     def ocnreg(self):
@@ -367,11 +385,11 @@ class Utilities(object):
         temp = temp.transpose(1,2,0)    #lat, lon rightmost
 
         if grid_style is 'T':
-            lon_curv = self._obj.TLONG.values
-            lat_curv = self._obj.TLAT.values
+            lon_curv = self._obj.TLONG.values.copy()
+            lat_curv = self._obj.TLAT.values.copy()
         elif grid_style is 'U':
-            lon_curv = self._obj.ULONG.values
-            lat_curv = self._obj.ULAT.values
+            lon_curv = self._obj.ULONG.values.copy()
+            lat_curv = self._obj.ULAT.values.copy()
 
         # set lon to -180 to 180
         lon_curv[lon_curv>180] = lon_curv[lon_curv>180] - 360
@@ -391,18 +409,23 @@ class Utilities(object):
 
         if len(dims) > 3:
             rgd_data = rgd_data.reshape(shape[0],shape[1],len(lat), len(lon))
-            return xr.DataArray(rgd_data, coords=[self._obj[dims[0]], self._obj[dims[1]], lat,lon],
+            ds =  xr.DataArray(rgd_data, coords=[self._obj[dims[0]], self._obj[dims[1]], lat,lon],
                                 dims=[dims[0], dims[1], 'lat', 'lon'])
+            ds.name = self._obj.name
+            return ds
 
         elif len(dims) > 2:
             rgd_data = rgd_data.reshape(shape[0],len(lat), len(lon))
-            return xr.DataArray(rgd_data, coords=[self._obj[dims[0]], lat,lon],
+            ds = xr.DataArray(rgd_data, coords=[self._obj[dims[0]], lat,lon],
                                 dims=[dims[0], 'lat', 'lon'])
-
+            ds.name = self._obj.name
+            return ds
+        
         elif len(dims) > 1:
             rgd_data = rgd_data.squeeze()
-            return xr.DataArray(rgd_data, coords=[lat,lon], dims=['lat', 'lon'])
-
+            ds = xr.DataArray(rgd_data, coords=[lat,lon], dims=['lat', 'lon'])
+            ds.name = self._obj.name
+            return ds
         else:
             raise ValueError('Dataarray has more than 4 dimensions.')
 
@@ -742,7 +765,9 @@ class Utilities(object):
         stream = integrate.cumtrapz(data * np.cos(np.deg2rad(data.lat)), x=data.lev * 1e2, initial=0., axis=levax)
         stream = stream * 2 * np.pi  / cc.g * cc.rearth * 1e-9
         stream = xr.DataArray(stream, coords=data.coords, dims=data.dims)
-
+        stream = stream.rename('ovt')
+        stream.attrs['long name'] = 'atmosphere overturning circulation'
+        stream.attrs['unit'] = 'Sv (1e9 kg/s)'
         return stream
 
     def interp_lat(self, dlat=1):
