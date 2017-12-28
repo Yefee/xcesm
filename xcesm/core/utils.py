@@ -45,11 +45,17 @@ dz_g35 = xr.open_dataarray(DATA_PATH + 'DZ_gx3v5.nc')
 kmt_g16 = xr.open_dataarray(DATA_PATH + 'KMT_gx1v6.nc') - 1 # land is -1, ocean starts from 0
 kmt_cube_g16 = xr.open_dataarray(DATA_PATH + 'KMT_CUBE_gx1v6.nc') # 3-D mask for kmt
 
-
+# CCSM4
 hyai_t42 = xr.open_dataarray(DATA_PATH + 'hyai_t42.nc')
 hyam_t42 = xr.open_dataarray(DATA_PATH + 'hyam_t42.nc')
 hybi_t42 = xr.open_dataarray(DATA_PATH + 'hybi_t42.nc')
 hybm_t42 = xr.open_dataarray(DATA_PATH + 'hybm_t42.nc')
+
+# CESM1
+hyai_cesm1_t42 = xr.open_dataarray(DATA_PATH + 'hyai_cesm1_t42.nc')
+hyam_cesm1_t42 = xr.open_dataarray(DATA_PATH + 'hyam_cesm1_t42.nc')
+hybi_cesm1_t42 = xr.open_dataarray(DATA_PATH + 'hybi_cesm1_t42.nc')
+hybm_cesm1_t42 = xr.open_dataarray(DATA_PATH + 'hybm_cesm1_t42.nc')
 
 
 

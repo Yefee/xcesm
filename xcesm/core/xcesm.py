@@ -600,7 +600,7 @@ class Utilities(object):
         return OHT
 
 
-    def hybrid_to_pressure(self, stride='m', P0=100000.):
+    def hybrid_to_pressure(self, model= 'CESM1', stride='m', P0=100000.):
         """
         Brought from darpy:https://github.com/darothen/darpy/blob/master/darpy/analysis.py
         Convert hybrid vertical coordinates to pressure coordinates
@@ -617,8 +617,12 @@ class Utilities(object):
         """
 
         # A, B coefficients
-        a = dict(i42=utl.hyai_t42, m42=utl.hyam_t42)
-        b = dict(i42=utl.hybi_t42, m42=utl.hybm_t42)
+        if model == 'CESM1':
+            a = dict(i42=utl.hyai_cesm1_t42, m42=utl.hyam_cesm1_t42)
+            b = dict(i42=utl.hybi_cesm1_t42, m42=utl.hybm_cesm1_t42)
+        elif model == 'CCSM4':
+            a = dict(i42=utl.hyai_t42, m42=utl.hyam_t42)
+            b = dict(i42=utl.hybi_t42, m42=utl.hybm_t42)
 
         if stride == 'm':
             a = a['m42']
