@@ -191,6 +191,28 @@ class POPDiagnosis(object):
         path = path * tarea
         path = path.groupby('time').sum() / tarea.utils.North_Atlantic().sum()
         return path.load()
+
+
+    # PA/TH local
+    def path(self, lat, lon, depth):
+
+        ds = self._obj
+        kmt = xcesm.core.utils.kmt_cube_g16
+
+        area = (ds.TLAT>lat-0.5) & (ds.TLAT<lat+0.5) \
+                           & (ds.TLONG>lon-0.5) & (ds.TLONG<lon+0.5)
+        
+        pa = ds.PA_P.where(area, drop=True)
+        th = ds.TH_P.where(area, drop=True)
+
+        pa = pa.mean('nlon').mean('nlat').dropna('z_t')
+        th = th.mean('nlon').mean('nlat').dropna('z_t')
+
+        pa = pa.sel(z_t=depth, method='nearest')
+        th = th.sel(z_t=depth, method='nearest')
+
+        path = pa / th
+        return path.load()
     # amoc
     @property
     def amoc(self):
