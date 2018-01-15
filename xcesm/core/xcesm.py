@@ -195,22 +195,27 @@ class POPDiagnosis(object):
 
     # PA/TH local
     def path(self, lat, lon, depth):
-
-        ds = self._obj
-        kmt = xcesm.core.utils.kmt_cube_g16
-
-        area = (ds.TLAT>lat-0.5) & (ds.TLAT<lat+0.5) \
-                           & (ds.TLONG>lon-0.5) & (ds.TLONG<lon+0.5)
         
-        pa = ds.PA_P.where(area, drop=True)
-        th = ds.TH_P.where(area, drop=True)
+        if lon < 0:
+            lon = lon + 360   # westhemisphere is negative 
+            
+        dsarray = self._obj
 
-        pa = pa.mean('nlon').mean('nlat').dropna('z_t')
-        th = th.mean('nlon').mean('nlat').dropna('z_t')
+        area = (dsarray.TLAT>lat-0.5) & (dsarray.TLAT<lat+0.5) \
+                & (dsarray.TLONG>lon-0.5) & (dsarray.TLONG<lon+0.5)
+        
+        pa = dsarray.PA_P.where(area, drop=True)
+        th = dsarray.TH_P.where(area, drop=True)
 
-        pa = pa.sel(z_t=depth, method='nearest')
-        th = th.sel(z_t=depth, method='nearest')
+        pa = pa.mean('nlon').mean('nlat').dropna('z_t').load()
+        th = th.mean('nlon').mean('nlat').dropna('z_t').load()
 
+        if dsarray.z_t[-1] > 1e5:
+            pa = pa.sel(z_t=depth * 1e2, method='nearest')
+            th = th.sel(z_t=depth * 1e2, method='nearest')
+        else:
+            pa = pa.sel(z_t=depth, method='nearest')
+            th = th.sel(z_t=depth, method='nearest')
         path = pa / th
         return path.load()
     # amoc
