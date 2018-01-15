@@ -194,12 +194,12 @@ class POPDiagnosis(object):
 
 
     # PA/TH local
-    def path(self, lat, lon, depth):
+    def pa_th(self, lat, lon, depth):
+        
+        dsarray = self._obj
         
         if lon < 0:
-            lon = lon + 360   # westhemisphere is negative 
-            
-        dsarray = self._obj
+            lon = lon + 360   # west hemisphere is negative 
 
         area = (dsarray.TLAT>lat-0.5) & (dsarray.TLAT<lat+0.5) \
                 & (dsarray.TLONG>lon-0.5) & (dsarray.TLONG<lon+0.5)
@@ -218,6 +218,8 @@ class POPDiagnosis(object):
             th = th.sel(z_t=depth, method='nearest')
         path = pa / th
         return path.load()
+
+
     # amoc
     @property
     def amoc(self):
