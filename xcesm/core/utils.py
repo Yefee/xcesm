@@ -65,6 +65,9 @@ gisp2 = xr.open_dataarray(DATA_PATH + 'gisp2_d18o.nc')
 
 # Pa/Th data
 path = xr.open_dataarray(DATA_PATH + 'path_Bermuda.nc')
+path_MD95 = xr.open_dataarray(DATA_PATH + 'path_MD95.nc')
+path_SU81 = xr.open_dataarray(DATA_PATH + 'path_SU81.nc')
+path_SU90 = xr.open_dataarray(DATA_PATH + 'path_SU90.nc')
 
 # Dome C temp reconstruction
 domec = xr.open_dataset(DATA_PATH + 'domeC_dD_temp.nc')
