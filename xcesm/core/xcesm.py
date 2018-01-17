@@ -232,7 +232,7 @@ class POPDiagnosis(object):
             else:
                 z_bound = moc.moc_z[(moc.moc_z > 2e2) & (moc.moc_z < 5e3)] #m
             lat_bound = moc.lat_aux_grid[
-                        (moc.lat_aux_grid > 40) & (moc.lat_aux_grid < 80)]
+                        (moc.lat_aux_grid > 26) & (moc.lat_aux_grid < 80)]
             if "time" in moc.dims:
                 amoc = moc.sel(moc_z=z_bound, lat_aux_grid=lat_bound).groupby('time').max()
             else:
