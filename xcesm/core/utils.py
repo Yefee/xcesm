@@ -44,6 +44,7 @@ dz_g16 = xr.open_dataarray(DATA_PATH + 'DZ_gx1v6.nc')
 dz_g35 = xr.open_dataarray(DATA_PATH + 'DZ_gx3v5.nc')
 kmt_g16 = xr.open_dataarray(DATA_PATH + 'KMT_gx1v6.nc') - 1 # land is -1, ocean starts from 0
 kmt_cube_g16 = xr.open_dataarray(DATA_PATH + 'KMT_CUBE_gx1v6.nc') # 3-D mask for kmt
+kmt_cube_g35 = xr.open_dataarray(DATA_PATH + 'KMT_CUBE_gx3v5.nc') # 3-D mask for kmt
 
 # CCSM4
 hyai_t42 = xr.open_dataarray(DATA_PATH + 'hyai_t42.nc')
