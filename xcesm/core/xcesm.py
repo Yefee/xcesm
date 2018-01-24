@@ -222,25 +222,35 @@ class POPDiagnosis(object):
 
     # amoc
     @property
-    def amoc(self):
-        try:
-            moc = self._obj.MOC.isel(transport_reg=1,moc_comp=0).copy()
-            moc.values[np.abs(moc.values) < 1e-6] = np.nan
-            # amoc area
-            if moc.moc_z[-1] > 1e5:
-                z_bound = moc.moc_z[(moc.moc_z > 2e4) & (moc.moc_z < 5e5)] #cm
-            else:
-                z_bound = moc.moc_z[(moc.moc_z > 2e2) & (moc.moc_z < 5e3)] #m
-            lat_bound = moc.lat_aux_grid[
-                        (moc.lat_aux_grid > 26) & (moc.lat_aux_grid < 80)]
-            if "time" in moc.dims:
-                amoc = moc.sel(moc_z=z_bound, lat_aux_grid=lat_bound).groupby('time').max()
-            else:
-                amoc = moc.sel(moc_z=z_bound, lat_aux_grid=lat_bound).max()
-        except:
-            raise ValueError('object has no MOC.')
-        return amoc
-    
+    def amoc(self, method='index'):
+        if method == 'index':
+            try:
+                moc = self._obj.MOC.isel(transport_reg=1,moc_comp=0).copy()
+                moc.values[np.abs(moc.values) < 1e-6] = np.nan
+                # amoc area
+                if moc.moc_z[-1] > 1e5:
+                    z_bound = moc.moc_z[(moc.moc_z > 5e4) & (moc.moc_z < 5e5)] #cm
+                else:
+                    z_bound = moc.moc_z[(moc.moc_z > 5e2) & (moc.moc_z < 5e3)] #m
+                lat_bound = moc.lat_aux_grid[
+                            (moc.lat_aux_grid > 30) & (moc.lat_aux_grid < 80)]
+                if "time" in moc.dims:
+                    amoc = moc.sel(moc_z=z_bound, lat_aux_grid=lat_bound).groupby('time').max()
+                else:
+                    amoc = moc.sel(moc_z=z_bound, lat_aux_grid=lat_bound).max()
+            except:
+                raise ValueError('object has no MOC.')
+            return amoc
+        elif method == 'field':
+                moc = self._obj.MOC.isel(transport_reg=1,moc_comp=0).copy()
+                moc.values[np.abs(moc.values) < 1e-6] = np.nan
+                moc = moc.rename({'moc_z':'z_t', 
+                                  'lat_aux_grid':'lat'})
+                moc.name = 'amoc'
+                return moc
+        else:
+            raise ValueError('method is not recognized, use [index, field]')
+            
     @property
     def d18ow(self):
         d18ow = (self._obj.R18O - 1) * 1000
