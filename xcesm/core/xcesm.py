@@ -221,23 +221,38 @@ class POPDiagnosis(object):
 
 
     # amoc
-    @property
-    def amoc(self, method='index'):
+    def amoc(self, method='index', depth=500, lats=[30,80]):
         if method == 'index':
             try:
-                moc = self._obj.MOC.isel(transport_reg=1,moc_comp=0).copy()
-                moc.values[np.abs(moc.values) < 1e-6] = np.nan
-                # amoc area
-                if moc.moc_z[-1] > 1e5:
-                    z_bound = moc.moc_z[(moc.moc_z > 5e4) & (moc.moc_z < 5e5)] #cm
-                else:
-                    z_bound = moc.moc_z[(moc.moc_z > 5e2) & (moc.moc_z < 5e3)] #m
-                lat_bound = moc.lat_aux_grid[
-                            (moc.lat_aux_grid > 30) & (moc.lat_aux_grid < 80)]
-                if "time" in moc.dims:
-                    amoc = moc.sel(moc_z=z_bound, lat_aux_grid=lat_bound).groupby('time').max()
-                else:
-                    amoc = moc.sel(moc_z=z_bound, lat_aux_grid=lat_bound).max()
+                if 'MOC' in list(self._obj.keys()):
+                    moc = self._obj.MOC.isel(transport_reg=1,moc_comp=0).copy()
+                    moc.values[np.abs(moc.values) < 1e-6] = np.nan
+                    # amoc area
+                    if moc.moc_z[-1] > 1e5:
+                        z_bound = moc.moc_z[(moc.moc_z > depth * 1e2) & (moc.moc_z < 5e5)] #cm
+                    else:
+                        z_bound = moc.moc_z[(moc.moc_z > depth) & (moc.moc_z < 5e3)] #m
+                    lat_bound = moc.lat_aux_grid[
+                                (moc.lat_aux_grid > lats[0]) & (moc.lat_aux_grid < lats[1])]
+                    if "time" in moc.dims:
+                        amoc = moc.sel(moc_z=z_bound, lat_aux_grid=lat_bound).groupby('time').max()
+                    else:
+                        amoc = moc.sel(moc_z=z_bound, lat_aux_grid=lat_bound).max()
+
+                elif 'amoc' in list(self._obj.keys()):
+                    moc = self._obj.amoc
+                    moc.values[np.abs(moc.values) < 1e-6] = np.nan
+                    # amoc area
+                    if moc.z_t[-1] > 1e5:
+                        z_bound = moc.z_t[(moc.z_t > depth * 1e2) & (moc.z_t < 5e5)] #cm
+                    else:
+                        z_bound = moc.z_t[(moc.z_t > depth) & (moc.z_t < 5e3)] #m
+                    lat_bound = moc.lat[
+                                (moc.lat > lats[0]) & (moc.lat < lats[1])]
+                    if "time" in moc.dims:
+                        amoc = moc.sel(z_t=z_bound, lat=lat_bound).groupby('time').max()
+                    else:
+                        amoc = moc.sel(z_t=z_bound, lat=lat_bound).max()
             except:
                 raise ValueError('object has no MOC.')
             return amoc
@@ -250,7 +265,7 @@ class POPDiagnosis(object):
                 return moc
         else:
             raise ValueError('method is not recognized, use [index, field]')
-            
+
     @property
     def d18ow(self):
         d18ow = (self._obj.R18O - 1) * 1000
