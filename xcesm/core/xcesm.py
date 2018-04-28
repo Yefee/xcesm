@@ -13,6 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from . import utils as utl
 from ..config import cesmconstant as cc
+from ..plots import colormap as clrmp
 
 @xr.register_dataset_accessor('cam')
 class CAMDiagnosis(object):
@@ -872,7 +873,6 @@ class Utilities(object):
 
         import cartopy.crs as ccrs
         from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
-        import nclcmaps
 
         if central_longitude == 180:
             xticks = [0, 60, 120, 180, 240, 300, 359.99]
@@ -887,9 +887,8 @@ class Utilities(object):
         if ax is None:
 
             ax = plt.axes(projection=ccrs.PlateCarree(central_longitude=central_longitude))
-#            ax = plt.axes(projection=ccrs.Orthographic(-80, 35))
 
-        cmaps = nclcmaps.cmaps(cmap)
+        cmaps = clrmp.cmap(cmap)
         self._obj.plot(ax=ax,cmap=cmaps,transform=ccrs.PlateCarree(), infer_intervals=True,
                        cbar_kwargs={'orientation': 'horizontal',
                                     'fraction':0.09,
@@ -910,3 +909,47 @@ class Utilities(object):
         return ax
 
 
+@xr.register_dataarray_accessor('plt')
+class Utilities(object):
+    def __init__(self, xarray_obj):
+        self._obj = xarray_obj
+
+    def quickmap(self, ax=None, central_longitude=180, cmap='BlueDarkRed18', **kwargs):
+
+        import cartopy.crs as ccrs
+        from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
+
+
+        if central_longitude == 180:
+            xticks = [0, 60, 120, 180, 240, 300, 359.99]
+        elif central_longitude == 0:
+            xticks = [-180, -120, -60, 0, 60, 120, 180]
+        else:
+            central_longitude=180
+            xticks = [0, 60, 120, 180, 240, 300, 359.99]
+            print("didn't explicitly give center_lat, use 180 as defalut.")
+
+
+        if ax is None:
+
+            ax = plt.axes(projection=ccrs.PlateCarree(central_longitude=central_longitude))
+
+        cmaps = clrmp.cmap(cmap)
+        self._obj.plot(ax=ax,cmap=cmaps,transform=ccrs.PlateCarree(), infer_intervals=True,
+                       cbar_kwargs={'orientation': 'horizontal',
+                                    'fraction':0.09,
+                                    'aspect':15}, **kwargs)
+
+        #set other properties
+        ax.set_global()
+        ax.coastlines(linewidth=0.6)
+        ax.set_xticks(xticks, crs=ccrs.PlateCarree())
+        ax.set_yticks([-90, -60, -30, 0, 30, 60, 90], crs=ccrs.PlateCarree())
+        lon_formatter = LongitudeFormatter(zero_direction_label=True,
+                                           number_format='.0f')
+        lat_formatter = LatitudeFormatter()
+        ax.xaxis.set_major_formatter(lon_formatter)
+        ax.yaxis.set_major_formatter(lat_formatter)
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        return ax

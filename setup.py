@@ -19,7 +19,7 @@ setup(name='xcesm',
       license='MIT',
       # packages=['xcesm','config'],
       packages=find_packages(),
-      package_data={'xcesm': ['config/*.nc']},
+      package_data={'xcesm': ['config/*.nc', 'plots/*.json']},
       install_requires=['xarray', 'pyresample', 'cartopy'],
       zip_safe=False)
 print(find_packages())
