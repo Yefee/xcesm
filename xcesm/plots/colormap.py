@@ -20,7 +20,8 @@ def cmap(name, bins=None):
 
 def subplots(nrow=2, ncol=2, figsize=None, ind=None):
     import cartopy.crs as ccrs
-
+    import matplotlib.pyplot as plt
+    
     if figsize is not None:
         fig = plt.figure(figsize=figsize)
     else:
