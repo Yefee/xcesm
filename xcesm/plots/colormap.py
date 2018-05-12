@@ -18,4 +18,22 @@ def cmap(name, bins=None):
         cmap = cmap._resample(bins)
     return cmap
 
+def subplots(nrow=2, ncol=2, figsize=None, ind=None):
+    import cartopy.crs as ccrs
+
+    if figsize is not None:
+        fig = plt.figure(figsize=figsize)
+    else:
+        fig = plt.figure()
+
+    tol = nrow * ncol   
+    if ind is not None:
+        pass
+    else:
+        ind = np.arange(tol) + 1
+
+    projection = ccrs.PlateCarree()
+    ax = [fig.add_subplot(nrow, ncol, i, projection=projection) for i in ind]
+
+    return ax
 

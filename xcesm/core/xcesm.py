@@ -914,7 +914,7 @@ class Utilities(object):
     def __init__(self, xarray_obj):
         self._obj = xarray_obj
 
-    def quickmap(self, ax=None, central_longitude=180, cmap='BlueDarkRed18', **kwargs):
+    def quickmap(self, ax=None, central_longitude=180, cmap='BlueWhiteOrangeRed', **kwargs):
 
         import cartopy.crs as ccrs
         from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
