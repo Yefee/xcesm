@@ -6,6 +6,7 @@ locations = {'Green_land': [72, 73, 321, 323],
             'Green_land_s': [72, 75, 310, 320],
             'Brazil': [-25, -15, 290, 310],
             'Hulu': [30.5, 33.5, 117.5, 120.5],
+            'Sanbao': [30.5, 33.5, 108.5, 112.5],
             'DomeC': [-76.0, -74.0, 122.0, 124.0],
             'Nino34': [-5,5,190,240]}
 
@@ -58,10 +59,11 @@ hyam_cesm1_t42 = xr.open_dataarray(DATA_PATH + 'hyam_cesm1_t42.nc')
 hybi_cesm1_t42 = xr.open_dataarray(DATA_PATH + 'hybi_cesm1_t42.nc')
 hybm_cesm1_t42 = xr.open_dataarray(DATA_PATH + 'hybm_cesm1_t42.nc')
 
-
+landfrac = xr.open_dataarray(DATA_PATH + 'cam_landfrac.nc')
 
 # oxygen isotope data
 hulu = xr.open_dataarray(DATA_PATH + 'hulu_d18o.nc')
+sanbao = xr.open_dataarray(DATA_PATH + 'sanbao_d18o.nc')
 gisp2 = xr.open_dataarray(DATA_PATH + 'gisp2_d18o.nc')
 
 # Pa/Th data

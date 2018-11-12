@@ -22,15 +22,17 @@ class CAMDiagnosis(object):
 
 
     # precipation
-    @property
     def precp(self):
         try:
             precc = self._obj.PRECC
             precl = self._obj.PRECL
             precp = (precc + precl) * cc.sday * cc.rhofw # convert to mm/day
             precp.name = 'precp'
+            precp.attrs['Description'] = 'Precipitation in CAM.'
+            precp.attrs['units'] = 'mm/day'
         except:
             raise ValueError('object has no PRECC.')
+
         return precp
 
     # d18op
@@ -484,18 +486,16 @@ class Utilities(object):
         else:
             raise ValueError('Dataarray has more than 4 dimensions.')
 
-    def globalmean(self,method='C'):
-
-        lonmn = self._obj.mean('lon')
+    def globalmean(self):
         lat_rad = xr.ufuncs.deg2rad(self._obj.lat)
         lat_cos = np.cos(lat_rad)
-        total = lonmn * lat_cos
-        if method == 'C':
-            return total.sum("lat") / lat_cos.sum() - cc.tkfrz
-        elif method == 'K':
-            return total.sum("lat") / lat_cos.sum()
+        if 'lon' in self._obj.dims:
+            lonmn = self._obj.mean('lon')
+            total = lonmn * lat_cos
         else:
-            raise ValueError('method not supported, use K or C instead.')
+            total = self._obj * lat_cos
+        
+        return total.sum("lat") / lat_cos.sum()
 
     def gbmeanpop(self, grid='g16'):
 
@@ -562,7 +562,7 @@ class Utilities(object):
 
         return field.sum() / coslat.sum()
 
-    def selloc(self,loc='Green_land', grid_method='regular'):
+    def selloc(self,loc='Green_land', grid_method='regular', mean_dim=['lat', 'lon']):
 
         if grid_method == 'regular':
             lat = self._obj.lat
@@ -578,8 +578,16 @@ class Utilities(object):
 #            lon = lon[lon>180] - 180
         # later shall be wrapped into utils module
         loc = utl.locations[loc]
-        return self._obj.where((lat > loc[0]) & (lat < loc[1]) & (lon > loc[2])
+        sellect = self._obj.where((lat > loc[0]) & (lat < loc[1]) & (lon > loc[2])
                                & (lon < loc[3]), drop=True)
+        s = sellect
+        for d in mean_dim:
+            sellect = sellect.mean(dim=d)
+
+        sellect.attrs['Description'] = 'average data from lat: [' + str(s.lat.min().values.round(1)) + ', ' + str(s.lat.max().values.round(1)) + ']; ' + \
+                                                    'from lon:[' + str(s.lon.min().values.round(1)) + ', ' + str(s.lon.max().values.round(1)) + '].'
+        
+        return sellect
 
     def _selbasin(self, grid='gx1v6', region='Atlantic'):
         basin = utl.ocean_region(grid)
@@ -869,7 +877,7 @@ class Utilities(object):
 
         return output
 
-    def quickmap(self, ax=None, central_longitude=180, cmap='BlueDarkRed18', **kwargs):
+    def quickmap(self, ax=None, central_longitude=180, cmap='NCV_blu_red', **kwargs):
 
         import cartopy.crs as ccrs
         from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
@@ -885,12 +893,12 @@ class Utilities(object):
 
 
         if ax is None:
-
-            ax = plt.axes(projection=ccrs.PlateCarree(central_longitude=central_longitude))
+            fig = plt.figure(figsize=(8.5,3.8))
+            ax = fig.add_subplot(111, projection=ccrs.PlateCarree(central_longitude=central_longitude))
 
         cmaps = clrmp.cmap(cmap)
         self._obj.plot(ax=ax,cmap=cmaps,transform=ccrs.PlateCarree(), infer_intervals=True,
-                       cbar_kwargs={'orientation': 'horizontal',
+                       cbar_kwargs={'orientation': 'vertical',
                                     'fraction':0.09,
                                     'aspect':15}, **kwargs)
 
@@ -909,12 +917,85 @@ class Utilities(object):
         return ax
 
 
+
+@xr.register_dataarray_accessor('stat')
+class Utilities(object):
+    def __init__(self, xarray_obj):
+        self._obj = xarray_obj
+
+    def normalize(self, dim='time'):
+        '''
+        Normalize a series in dim
+        '''
+
+        dsarray = self._obj
+        nm = x = dsarray - dsarray.mean(dim=dim)
+        nm = nm / dsarray.std(dim=dim)
+        try:
+            nm.name = dsarray.name
+            nm.attrs['Description'] = 'Normalized ' + dsarray.name + '.'
+        except:
+            pass
+        return nm  
+
+
+    def corr_with(self, dsarrayy, dim='time'):
+        
+        '''
+        Pearson correlation
+        '''
+        dsarrayx = self._obj
+
+        x = dsarrayx - dsarrayx.mean(dim=dim)
+        y = dsarrayy - dsarrayy.mean(dim=dim)
+        xy = x * y
+        xy = xy.mean(dim=dim)
+
+        xx = dsarrayx.std(dim=dim)
+        yy = dsarrayy.std(dim=dim)
+        r = xy / xx / yy
+        r.name = 'r'
+        r.attrs['units'] = 'unitless'
+        try:
+            r.attrs['Description'] = 'Pearson Correlation Coefficients between ' + dsarrayx.name + ' and ' + dsarrayy.name + '.'
+        except:
+            pass
+        return r
+
+    
+    def butter_filter(self, cutoff, fs, btype, order=5): 
+        '''
+        Butterworth filter, only applied on 1d array
+        fs: sample rate
+        '''
+        from scipy import signal
+        
+        dsarray = self._obj
+
+        nyq = 0.5 * fs
+        # check if bandpass 
+        if isinstance(cutoff, list) and 'band' in btype:
+            normal_cutoff = [c / nyq for c in cutoff]
+        else:
+            normal_cutoff = cutoff / nyq
+
+        b, a = signal.butter(order, normal_cutoff, btype=btype, analog=False)
+        y = signal.filtfilt(b, a, dsarray.values)
+
+        newds = xr.ones_like(dsarray)
+        newds.values = y
+        newds.attrs['Description'] = btype + ' Pass Butterworth filter at cutoff: ' + str(cutoff) 
+
+        return newds
+
+
+
 @xr.register_dataarray_accessor('plt')
 class Utilities(object):
     def __init__(self, xarray_obj):
         self._obj = xarray_obj
 
-    def quickmap(self, ax=None, central_longitude=180, cmap='BlueWhiteOrangeRed', **kwargs):
+    def quickmap(self, ax=None, central_longitude=180, cmap='NCV_blu_red', **kwargs):
 
         import cartopy.crs as ccrs
         from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
@@ -931,12 +1012,13 @@ class Utilities(object):
 
 
         if ax is None:
+            fig = plt.figure(figsize=(8.5,3.8))
+            ax = fig.add_subplot(111, projection=ccrs.PlateCarree(central_longitude=central_longitude))
 
-            ax = plt.axes(projection=ccrs.PlateCarree(central_longitude=central_longitude))
 
         cmaps = clrmp.cmap(cmap)
         self._obj.plot(ax=ax,cmap=cmaps,transform=ccrs.PlateCarree(), infer_intervals=True,
-                       cbar_kwargs={'orientation': 'horizontal',
+                       cbar_kwargs={'orientation': 'vertical',
                                     'fraction':0.09,
                                     'aspect':15}, **kwargs)
 
