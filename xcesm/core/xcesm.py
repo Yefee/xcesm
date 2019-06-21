@@ -26,7 +26,10 @@ class CAMDiagnosis(object):
         try:
             precc = self._obj.PRECC
             precl = self._obj.PRECL
-            precp = (precc + precl) * cc.sday * cc.rhofw # convert to mm/day
+            if precc.max() > 1:
+                precp = precc + precl
+            else:
+                precp = (precc + precl) * cc.sday * cc.rhofw # convert to mm/day
             precp.name = 'precp'
             precp.attrs['Description'] = 'Precipitation in CAM.'
             precp.attrs['units'] = 'mm/day'
@@ -176,6 +179,42 @@ class CAMDiagnosis(object):
         return PHT, AHT, OHT
 
 
+    def net_heat_flux(self):
+        
+        OLR = self._obj.FLNT
+        ASR = self._obj.FSNT
+        Rtoa = ASR - OLR  # net downwelling radiation
+
+        LHF = self._obj.LHFLX 
+        LHF = LHF
+        SHF = self._obj.SHFLX 
+        SHF = SHF
+
+        LWsfc = self._obj.FLNS 
+        LWsfc = LWsfc
+        SWsfc = -self._obj.FSNS 
+        SWsfc = SWsfc
+
+        SurfaceRadiation = LWsfc + SWsfc  + SHF + LHF# net upward radiation from surface
+
+        NHeat = Rtoa + SurfaceRadiation
+
+        return NHeat
+
+    def mse(self):
+        Q = self._obj.Q
+        T = self._obj['T']
+        Z3 = self._obj.Z3
+        
+        if Q.max() > 1:
+            Q = Q * 1e-3 # convert to kg/kg
+        
+        if T.max() < 200:
+            T = T + cc.tkfrz
+
+        MSE = cc.cpdair * T + cc.latvap * Q + cc.g * Z3
+        MSE.attrs['unit'] = 'J/kg'
+        return MSE
 
 @xr.register_dataset_accessor('pop')
 class POPDiagnosis(object):
@@ -452,7 +491,7 @@ class Utilities(object):
         lon_curv[lon_curv>180] = lon_curv[lon_curv>180] - 360
 
         # targit grid
-        lon = np.arange(-180.,180.01,dlon)
+        lon = np.arange(-180.,179.01,dlon)
         lat = np.arange(-90.,89.999,dlat)
         lon_lin, lat_lin = np.meshgrid(lon,lat)
         lon_lin = pyresample.utils.wrap_longitudes(lon_lin)
@@ -469,22 +508,24 @@ class Utilities(object):
             ds =  xr.DataArray(rgd_data, coords=[self._obj[dims[0]], self._obj[dims[1]], lat,lon],
                                 dims=[dims[0], dims[1], 'lat', 'lon'])
             ds.name = self._obj.name
-            return ds
+            # return ds
 
         elif len(dims) > 2:
             rgd_data = rgd_data.reshape(shape[0],len(lat), len(lon))
             ds = xr.DataArray(rgd_data, coords=[self._obj[dims[0]], lat,lon],
                                 dims=[dims[0], 'lat', 'lon'])
             ds.name = self._obj.name
-            return ds
+            # return ds
         
         elif len(dims) > 1:
             rgd_data = rgd_data.squeeze()
             ds = xr.DataArray(rgd_data, coords=[lat,lon], dims=['lat', 'lon'])
             ds.name = self._obj.name
-            return ds
+            # return ds
         else:
             raise ValueError('Dataarray has more than 4 dimensions.')
+
+        return ds
 
     def globalmean(self):
         lat_rad = xr.ufuncs.deg2rad(self._obj.lat)
@@ -683,7 +724,7 @@ class Utilities(object):
         if model == 'CESM1':
             a = dict(i42=utl.hyai_cesm1_t42, m42=utl.hyam_cesm1_t42)
             b = dict(i42=utl.hybi_cesm1_t42, m42=utl.hybm_cesm1_t42)
-        elif model == 'CCSM4':
+        elif model == 'CCSM4' or model == 'CCSM3':
             a = dict(i42=utl.hyai_t42, m42=utl.hyam_t42)
             b = dict(i42=utl.hybi_t42, m42=utl.hybm_t42)
 
@@ -958,6 +999,29 @@ class Utilities(object):
         r.attrs['units'] = 'unitless'
         try:
             r.attrs['Description'] = 'Pearson Correlation Coefficients between ' + dsarrayx.name + ' and ' + dsarrayy.name + '.'
+        except:
+            pass
+        return r
+
+    def regress_with(self, dsarrayy, dim='time'):
+        
+        '''
+        Pearson correlation
+        '''
+        dsarrayx = self._obj
+
+        x = dsarrayx - dsarrayx.mean(dim=dim)
+        y = dsarrayy - dsarrayy.mean(dim=dim)
+        xy = x * y
+        xy = xy.mean(dim=dim)
+
+        # xx = dsarrayx.std(dim=dim)
+        yy = dsarrayy.std(dim=dim)
+        r = xy / yy ** 2
+        r.name = 'r'
+        # r.attrs['units'] = 'unitless'
+        try:
+            r.attrs['Description'] = 'Regression Coefficients of ' + dsarrayx.name + ' on ' + dsarrayy.name + '.'
         except:
             pass
         return r

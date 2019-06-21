@@ -8,6 +8,8 @@ locations = {'Green_land': [72, 73, 321, 323],
             'Hulu': [30.5, 33.5, 117.5, 120.5],
             'Sanbao': [30.5, 33.5, 108.5, 112.5],
             'DomeC': [-76.0, -74.0, 122.0, 124.0],
+            'Bittoo':[29.5, 32.5, 78.5, 81.5],
+            'Mawmluh':[25.2-1.5, 25.2+1.5, 91.4-1.5, 91.4+1.5],
             'Nino34': [-5,5,190,240]}
 
 
@@ -41,6 +43,7 @@ dyu_g16 = xr.open_dataarray(DATA_PATH + 'DYU_gx1v6.nc')
 dxt_g16 = xr.open_dataarray(DATA_PATH + 'DXT_gx1v6.nc')
 dyt_g16 = xr.open_dataarray(DATA_PATH + 'DYT_gx1v6.nc')
 angle_g16 = xr.open_dataarray(DATA_PATH + 'ANGLE_gx1v6.nc')
+angle_g35 = xr.open_dataarray(DATA_PATH + 'ANGLE_gx3v5.nc')
 dz_g16 = xr.open_dataarray(DATA_PATH + 'DZ_gx1v6.nc')
 dz_g35 = xr.open_dataarray(DATA_PATH + 'DZ_gx3v5.nc')
 kmt_g16 = xr.open_dataarray(DATA_PATH + 'KMT_gx1v6.nc') - 1 # land is -1, ocean starts from 0
@@ -63,6 +66,8 @@ landfrac = xr.open_dataarray(DATA_PATH + 'cam_landfrac.nc')
 
 # oxygen isotope data
 hulu = xr.open_dataarray(DATA_PATH + 'hulu_d18o.nc')
+hzz1 = xr.open_dataarray(DATA_PATH + 'hzz1_d18o.nc')
+hzz2 = xr.open_dataarray(DATA_PATH + 'hzz2_d18o.nc')
 sanbao = xr.open_dataarray(DATA_PATH + 'sanbao_d18o.nc')
 gisp2 = xr.open_dataarray(DATA_PATH + 'gisp2_d18o.nc')
 

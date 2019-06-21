@@ -41,7 +41,7 @@ def subplots(nrow=2, ncol=2, figsize=None, ind=None, **kwarg):
         projection = ccrs.PlateCarree(**kwarg)
         ax = [fig.add_subplot(nrow, ncol, i, projection=projection) for i in ind_total]
    
-    return ax
+    return fig, ax
 
 def make_patch_spines_invisible(ax):
 
